@@ -2,7 +2,7 @@
 name = "splatmaker-mcp"
 version = "0.1.0"
 description = "Self-hosted FOSS Gaussian-splat generation MCP — worldlabs-mcp alternative, zero marginal cost, local 4090 inference"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     # Floor pinned per fleet doctrine (JUNE_2026_STANDARDS_BAR.md): 3.2.0 is a
     # deliberate low floor for compat, NOT the target version. uv resolves to
@@ -23,6 +23,24 @@ dev = [
     "pytest-asyncio>=0.24",
     "ruff>=0.6",
 ]
+engine = [
+    # Nerfstudio pulls gsplat as its rasterization backend automatically -
+    # DECIDED 2026-07-13 (see README.md "Engine status"): Nerfstudio over
+    # bare gsplat (too much DIY glue) and Postshot (scratched - paid CLI
+    # behind a free download, bait-and-switch shaped).
+    "torch>=2.4",
+    "torchvision",
+    "nerfstudio>=1.1",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+torchvision = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
 [project.scripts]
 splatmaker-mcp = "splatmaker_mcp.__main__:main"
@@ -37,6 +55,12 @@ packages = ["src/splatmaker_mcp"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.uv]
+# nerfstudio's dependency tree pulls in newrawpy, which only has pre-release
+# versions satisfying nerfstudio's constraint as of 2026-07-13 - found this
+# via a real failed `uv sync`, not guessed.
+prerelease = "allow"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

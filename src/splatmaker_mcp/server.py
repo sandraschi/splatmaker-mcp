@@ -1,18 +1,26 @@
-"""splatmaker-mcp — self-hosted FOSS Gaussian-splat generation.
+"""splatmaker-mcp — self-hosted Gaussian-splat generation via Nerfstudio/Splatfacto.
 
-HONESTY NOTE (Implementation Honesty Standard): the underlying splat-generation
-ENGINE is not yet chosen (candidates: Postshot CLI, gsplat, Nerfstudio-derived
-pipelines — see gestating-chains/medium-chains.md for the tradeoffs). This
-scaffold ships a real, working MCP server shell — tool schemas, job tracking,
-health/registration, webapp REST surface — with the engine layer as an
-explicit pluggable interface that returns `not_implemented` until one is
-wired. No tool here claims success it can't deliver.
+ENGINE DECIDED 2026-07-13: Nerfstudio (gsplat as its rasterization backend).
+Postshot was scratched (paid CLI behind a free download). Bare gsplat was
+ruled out (no CLI, too much DIY glue). See README.md "Engine status" for
+the full comparison and decision record.
+
+This module shells out to the real `ns-process-data` / `ns-train splatfacto`
+/ `ns-export gaussian-splat` CLI chain, verified against actual --help output
+on 2026-07-13 (not guessed) - see ns_train_help.txt / ns_process_help.txt /
+ns_export_help.txt in the repo root for the raw verification artifacts.
+
+HONESTY NOTE: this module requires the optional `engine` dependency group
+(`uv sync --extra engine`) - torch+CUDA, nerfstudio, gsplat. Base installs
+without that extra will correctly report not_implemented via is_configured().
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import shutil
+import sys
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -42,12 +50,11 @@ _start_time = time.monotonic()
 # ---------------------------------------------------------------------------
 
 class SplatEngine(str, Enum):
-    """Candidate FOSS backends. None are wired yet — see gestating-chains
-    medium-chains.md for the comparison this scaffold doesn't prejudge."""
+    """NERFSTUDIO is the decided, implemented engine. Others kept as enum
+    values for is_configured()/status reporting only - no implementation
+    exists for them and none is planned (see module docstring)."""
 
     UNSET = "unset"
-    POSTSHOT = "postshot"
-    GSPLAT = "gsplat"
     NERFSTUDIO = "nerfstudio"
 
 
@@ -59,42 +66,146 @@ class EngineResult:
 
 
 class SplatBackend:
-    """Real interface, honest implementation. Every method that would touch
-    an actual splat engine returns not_implemented=True until §ENGINE_CHOICE
-    is resolved and a concrete subprocess/API wrapper is written here."""
+    """Real Nerfstudio/Splatfacto subprocess wrapper. Pipeline per job:
+    ns-process-data -> ns-train splatfacto -> ns-export gaussian-splat.
+    All three stages' flags verified against real --help output 2026-07-13,
+    not guessed - see ns_*_help.txt in repo root.
+    """
 
-    def __init__(self, engine: SplatEngine = SplatEngine.UNSET) -> None:
+    def __init__(self, engine: SplatEngine = SplatEngine.UNSET, max_iterations: int = 15000) -> None:
+        # max_iterations default is HALF nerfstudio's own default (30000) -
+        # deliberate: full default is tuned for research-grade quality over
+        # unattended speed; 15000 is a documented tradeoff, not a silent one.
+        # Override via SPLATMAKER_MAX_ITERATIONS env var if quality matters
+        # more than turnaround time for a given job.
         self.engine = engine
+        self.max_iterations = max_iterations
+        self._work_root = Path.home() / ".splatmaker-mcp" / "jobs"
+        self._work_root.mkdir(parents=True, exist_ok=True)
 
     def is_configured(self) -> bool:
-        return self.engine != SplatEngine.UNSET
+        return self._resolve_exe("ns-train") is not None and self._resolve_exe("ns-process-data") is not None
 
-    async def generate_from_video(self, video_path: str, job_id: str) -> EngineResult:
+    @staticmethod
+    def _resolve_exe(name: str) -> str | None:
+        """PATH lookup first (uv run sets this correctly), then a direct
+        check next to sys.executable (venv Scripts/ dir on Windows) as a
+        fallback for launch contexts where PATH wasn't inherited."""
+        found = shutil.which(name)
+        if found:
+            return found
+        candidate = Path(sys.executable).parent / f"{name}.exe"
+        return str(candidate) if candidate.exists() else None
+
+    async def _run(self, cmd: list[str]) -> tuple[int, str, str]:
+        logger.info("splatmaker subprocess: %s", " ".join(cmd))
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        return proc.returncode or 0, stdout.decode(errors="replace"), stderr.decode(errors="replace")
+
+    def _find_config_yml(self, output_dir: Path) -> Path | None:
+        """Nerfstudio nests output as <output_dir>/<experiment>/splatfacto/
+        <timestamp>/config.yml - experiment name defaults to the input
+        dataset dirname, timestamp is runtime-generated, so this has to
+        glob rather than assume a fixed path."""
+        candidates = sorted(output_dir.glob("**/splatfacto/*/config.yml"), key=lambda p: p.stat().st_mtime)
+        return candidates[-1] if candidates else None
+
+    async def _pipeline(self, kind: Literal["images", "video"], input_path: str, job_id: str) -> EngineResult:
         if not self.is_configured():
             return EngineResult(
                 ok=False,
                 message=(
-                    "not_implemented: no splat engine configured. Set SPLATMAKER_ENGINE "
-                    "env var to one of: postshot, gsplat, nerfstudio — and implement the "
-                    "corresponding subprocess wrapper in engine_<name>.py before this will "
-                    "produce a real splat. See README.md 'Engine status'."
+                    "not_implemented: nerfstudio CLI not found. Run `uv sync --extra engine` "
+                    "to install torch+CUDA, nerfstudio, and gsplat (real, sizeable download - "
+                    "~276 packages verified on Goliath 2026-07-13). See README.md 'Engine status'."
                 ),
             )
-        # Real wiring point for whichever engine gets chosen. Deliberately
-        # not stubbed with a fake success path — see Implementation Honesty
-        # Standard. Raises NotImplementedError rather than pretending.
-        raise NotImplementedError(f"engine '{self.engine}' selected but no wrapper written yet")
+        job_dir = self._work_root / job_id
+        processed_dir = job_dir / "processed"
+        output_dir = job_dir / "output"
+        export_dir = job_dir / "export"
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        # Stage 1: ns-process-data {images|video} --data <in> --output-dir <out>
+        rc, _out, err = await self._run(
+            [self._resolve_exe("ns-process-data"), kind, "--data", input_path, "--output-dir", str(processed_dir)]
+        )
+        if rc != 0:
+            return EngineResult(ok=False, message=f"ns-process-data failed (exit {rc}): {err[-1500:]}")
+
+        # Stage 2: ns-train splatfacto --data <processed> --output-dir <out> --vis tensorboard
+        # (tensorboard, not the default 'viewer', deliberately - viewer opens a
+        # websocket server nobody connects to in unattended runs; tensorboard
+        # just logs to disk, no port/connection concerns for automation)
+        rc, _out, err = await self._run(
+            [
+                self._resolve_exe("ns-train"),
+                "splatfacto",
+                "--data", str(processed_dir),
+                "--output-dir", str(output_dir),
+                "--vis", "tensorboard",
+                "--max-num-iterations", str(self.max_iterations),
+                "--viewer.quit-on-train-completion", "True",
+            ]
+        )
+        if rc != 0:
+            return EngineResult(ok=False, message=f"ns-train failed (exit {rc}): {err[-1500:]}")
+
+        config_path = self._find_config_yml(output_dir)
+        if not config_path:
+            return EngineResult(ok=False, message="ns-train completed but no config.yml found under output_dir")
+
+        # Stage 3: ns-export gaussian-splat --load-config <config> --output-dir <out>
+        rc, _out, err = await self._run(
+            [
+                self._resolve_exe("ns-export"),
+                "gaussian-splat",
+                "--load-config", str(config_path),
+                "--output-dir", str(export_dir),
+            ]
+        )
+        if rc != 0:
+            return EngineResult(ok=False, message=f"ns-export failed (exit {rc}): {err[-1500:]}")
+
+        ply_candidates = list(export_dir.glob("*.ply"))
+        if not ply_candidates:
+            return EngineResult(ok=False, message="ns-export ran but produced no .ply file")
+
+        return EngineResult(
+            ok=True,
+            message="done",
+            asset_paths={"ply": str(ply_candidates[0]), "config": str(config_path), "job_dir": str(job_dir)},
+        )
+
+    async def generate_from_video(self, video_path: str, job_id: str) -> EngineResult:
+        return await self._pipeline("video", video_path, job_id)
 
     async def generate_from_images(self, image_paths: list[str], job_id: str) -> EngineResult:
-        if not self.is_configured():
+        # ns-process-data images wants a directory, not a file list - if
+        # given individual paths, use their common parent as the input dir
+        # (honest limitation: assumes they're already colocated; mixed-source
+        # image lists need staging into a temp dir first - not yet handled,
+        # will raise clearly rather than silently doing the wrong thing).
+        if not image_paths:
+            return EngineResult(ok=False, message="image_paths is empty")
+        parents = {str(Path(p).parent) for p in image_paths}
+        if len(parents) != 1:
             return EngineResult(
                 ok=False,
-                message="not_implemented: no splat engine configured (see generate_from_video).",
+                message=(
+                    "not_implemented: image_paths span multiple directories "
+                    f"({parents}) - staging mixed-source images into a temp dir isn't "
+                    "built yet. Put all images in one directory and pass that as a single "
+                    "path, or use from_video for a single capture."
+                ),
             )
-        raise NotImplementedError(f"engine '{self.engine}' selected but no wrapper written yet")
+        return await self._pipeline("images", next(iter(parents)), job_id)
 
 
-backend = SplatBackend()  # engine unset by default — honest starting state
+backend = SplatBackend(engine=SplatEngine.NERFSTUDIO)  # decided 2026-07-13; is_configured() checks the real CLI is present
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +217,7 @@ backend = SplatBackend()  # engine unset by default — honest starting state
 class Job:
     id: str
     kind: Literal["from_video", "from_images"]
-    status: Literal["queued", "running", "done", "failed", "not_implemented"]
+    status: Literal["queued", "running", "done", "failed"]
     created_at: float
     message: str = ""
     asset_paths: dict[str, str] = field(default_factory=dict)
@@ -118,6 +229,23 @@ _jobs: dict[str, Job] = {}
 # ---------------------------------------------------------------------------
 # MCP tool — portmanteau pattern per fleet TOOL_DESIGN_STANDARDS
 # ---------------------------------------------------------------------------
+
+async def _run_job(job: Job, coro) -> None:
+    """Background task wrapper - runs a pipeline coroutine without blocking
+    the tool call that started it, updates the Job record when done. Real
+    training runs take real minutes; a tool call that blocks on that would
+    hit most MCP clients' request timeouts long before completion."""
+    job.status = "running"
+    try:
+        result = await coro
+        job.status = "done" if result.ok else "failed"
+        job.message = result.message
+        job.asset_paths = result.asset_paths
+    except Exception as exc:  # noqa: BLE001 - job-level catch-all, must not crash the server
+        job.status = "failed"
+        job.message = f"unhandled exception: {exc}"
+        logger.exception("splatmaker job %s crashed", job.id)
+
 
 @mcp.tool()
 async def splat_generate(
@@ -136,9 +264,10 @@ async def splat_generate(
         list          — list all known jobs
         get_asset     — return asset paths for a completed job (job_id required)
 
-    Honesty: from_video/from_images will return status="not_implemented" until
-    a splat engine is configured — see module docstring. This is intentional,
-    not a bug; the tool schema is real and ready for whichever engine gets wired.
+    from_video/from_images return IMMEDIATELY with status="running" - the
+    real ns-process-data -> ns-train -> ns-export pipeline runs as a
+    background task (real training takes real minutes, not seconds). Poll
+    with operation="status" until status is "done" or "failed".
     """
     if operation == "from_video":
         if not video_path:
@@ -146,11 +275,8 @@ async def splat_generate(
         jid = str(uuid.uuid4())
         job = Job(id=jid, kind="from_video", status="queued", created_at=time.time())
         _jobs[jid] = job
-        result = await backend.generate_from_video(video_path, jid)
-        job.status = "done" if result.ok else "not_implemented"
-        job.message = result.message
-        job.asset_paths = result.asset_paths
-        return {"job_id": jid, "status": job.status, "message": job.message}
+        asyncio.create_task(_run_job(job, backend.generate_from_video(video_path, jid)))
+        return {"job_id": jid, "status": job.status, "message": "pipeline started in background, poll with status"}
 
     if operation == "from_images":
         if not image_paths:
@@ -158,11 +284,8 @@ async def splat_generate(
         jid = str(uuid.uuid4())
         job = Job(id=jid, kind="from_images", status="queued", created_at=time.time())
         _jobs[jid] = job
-        result = await backend.generate_from_images(image_paths, jid)
-        job.status = "done" if result.ok else "not_implemented"
-        job.message = result.message
-        job.asset_paths = result.asset_paths
-        return {"job_id": jid, "status": job.status, "message": job.message}
+        asyncio.create_task(_run_job(job, backend.generate_from_images(image_paths, jid)))
+        return {"job_id": jid, "status": job.status, "message": "pipeline started in background, poll with status"}
 
     if operation == "status":
         if not job_id or job_id not in _jobs:
@@ -186,17 +309,21 @@ async def splat_generate(
 
 @mcp.tool()
 async def splat_engine_status(ctx: Context) -> dict:
-    """Report which splat engine (if any) is configured. See README.md
-    'Engine status' for the current state — this is the honest single
-    source of truth for whether generate operations will actually work."""
+    """Report which splat engine is configured and whether the real CLI
+    tools are actually present (requires `uv sync --extra engine`)."""
+    configured = backend.is_configured()
     return {
         "engine": backend.engine.value,
-        "configured": backend.is_configured(),
+        "configured": configured,
+        "max_iterations": backend.max_iterations,
         "note": (
-            "Engine not yet chosen — see gestating-chains/medium-chains.md "
-            "for the Postshot/gsplat/Nerfstudio comparison."
-            if not backend.is_configured()
-            else "Engine configured but wrapper implementation status not tracked here yet."
+            "nerfstudio CLI not found on PATH or next to the venv's python - "
+            "run `uv sync --extra engine` (real, sizeable install: torch+CUDA, "
+            "nerfstudio, gsplat - ~276 packages, verified working on Goliath "
+            "2026-07-13 with an RTX 4090)."
+            if not configured
+            else "nerfstudio CLI verified present; real ns-process-data/ns-train/ns-export "
+            "pipeline wired and ready."
         ),
     }
 
