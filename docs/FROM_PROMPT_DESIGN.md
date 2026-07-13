@@ -77,6 +77,8 @@ Worth naming honestly rather than defaulting past it: Google's Veo 3 is a genuin
 
 **Revised sequencing:** test Wan 2.7's 9-grid/first-last-frame features first (free, already closer in stated purpose to this exact problem than general cinematic models). Only reach for a paid API - Veo or Kling - if that specific test fails, and compare both rather than defaulting to Veo alone.
 
+**RTX 4090 compatibility, checked 2026-07-14:** very likely yes, but no hard confirmed VRAM numbers found for Wan 2.7 specifically - one current source states the 4090 "is worth it only if you need Wan 2.7," which only makes sense if it runs there, and indirect evidence supports it (2.7 keeps native resolution at 1080p, same tier as 2.2's 14B; still Apache 2.0 open-weights; Wan's community quantization ecosystem - FP8 ~15GB, GGUF Q4/Q8 - has shown up within days of every prior release). For calibration, 2.2's 14B confirmed numbers: full FP16 needs 54-65GB (out of reach even for a 5090), but FP8 + T5 offload gets 720p clips on a 4090 in 2-4 minutes. Not a hardware blocker either way - the real open question is whether comfyops-mcp's current model roster has 2.7 (or its quantized weights) downloaded yet, which was already flagged as an open question above.
+
 ## Copyright/usage scope
 
 Pulling stills from a copyrighted film (via plex-mcp, from Sandra's own library) as private, local, non-distributed creative/compositional reference is a materially different thing from reproducing or distributing copyrighted material. This design is scoped to **personal, local, non-published use** - generating a splat of your own home inspired by a film you own, kept on your own infrastructure. That scope should stay explicit if this ever gets built, not left implicit.
