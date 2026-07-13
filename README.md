@@ -6,11 +6,13 @@
 
 ## Why this exists
 
-worldlabs-mcp (Marble API) isn't cheap. This fleet has an RTX 4090 sitting idle for exactly this kind of workload. A FOSS Gaussian-splat pipeline (Postshot / gsplat / Nerfstudio-class tooling — none chosen yet) wrapped as an MCP server gets the same "photo/video → navigable 3D world" capability at zero marginal cost, feeding the same downstream chain (`blender-mcp` → `resonite-mcp` / Resonite, VRChat) that worldlabs-mcp already feeds.
+worldlabs-mcp (Marble API) isn't cheap. This fleet has an RTX 4090 sitting idle for exactly this kind of workload. A FOSS Gaussian-splat pipeline (**Nerfstudio, decided 2026-07-13** — see "Engine status") wrapped as an MCP server gets the same "photo/video → navigable 3D world" capability at zero marginal cost, feeding the same downstream chain (`blender-mcp` → `resonite-mcp` / Resonite, VRChat) that worldlabs-mcp already feeds.
 
 There's also a plausible case this is useful beyond this fleet — the Resonite and VRChat world-building communities currently either pay for splat SaaS or fight research-grade CLI tooling directly. If this ships clean, it may be worth public release per `FLEET_PROMOTION.md`.
 
 ## Engine status
+
+**DECIDED 2026-07-13: Nerfstudio.** Postshot scratched entirely (Sandra: "'download free' then 'account with useful CLI needs £40pcm' is a bit unverschämte Frechheit" — fair, and the free-download/paid-CLI split is a bait-and-switch shape regardless of the underlying business reason). gsplat ruled out as bare-library/no-CLI/too-much-glue. This section keeps the full comparison research below for the record, but the decision is made — next step is implementation, not further evaluation.
 
 Researched 2026-07-13 (stars/age/CLI quality/speed/collider-mesh support/known bugs — sources: PyPI, GitHub, radiancefields.com, thefuture3d.com, polyvia3d.com benchmark, docs.nerf.studio). **None chosen for implementation yet** — this is a comparison to inform the choice, not a decision.
 
@@ -28,7 +30,7 @@ Researched 2026-07-13 (stars/age/CLI quality/speed/collider-mesh support/known b
 | Quality (PSNR, same benchmark) | 28.1 dB | 27.9 dB | Not benchmarked head-to-head |
 | Known gaps | JIT CUDA compile breaks on some PyTorch/CUDA combos; zero pipeline, all DIY glue | No fisheye/equirectangular/orthographic camera support (perspective only) — check against actual capture method | PLY exports have been reported missing attributes (normals, opacity, scale, rotation, SH coefficients) needed by some downstream tools (SOGS) |
 
-**Working recommendation (not yet implemented):** Nerfstudio — real CLI suited to subprocess wrapping, fully Python (fits fleet's `uv`-first philosophy, zero extra glue vs. gsplat), PSNR gap vs. alternatives is within "barely perceptible" range per every source checked. **Strengthened by the pricing correction above:** Postshot's CLI isn't free either, on top of being GUI-first-designed and historically paywalled — there's no remaining cost or capability argument for it over a genuinely free, Apache-2.0, CLI-native alternative for the unattended-automation use case this server actually needs.
+**Working recommendation (not yet implemented):** ~~Nerfstudio~~ **DECIDED: Nerfstudio.** See the decision note at the top of this section.
 
 **Risk framing, revised again 2026-07-13 (pricing correction supersedes the free-tier framing below):** the "install Studio, hope for the best" discussion below was conducted under the mistaken belief that Studio (and its CLI) was genuinely free. It is very likely NOT — Studio appears to be a real paid tier (~£40/month per direct browser observation), gating CLI access specifically. The "frozen vs. actively churning" business-stability discussion below still stands as reasoning, but the practical upshot changes: this isn't a zero-cost hedge anymore, it's a real ~£480/year recurring cost question against a ~€100/month total AI-tools budget, competing directly with everything else in that budget. Re-evaluate before subscribing to anything — don't let the sunk research cost here push toward a subscription that wasn't actually free after all.
 
@@ -76,7 +78,7 @@ See `INSTALL.md`. Short version: `uv sync`, then `uv run splatmaker-mcp` (stdio)
 
 ## Roadmap
 
-1. ~~Archive a local copy of the Postshot Studio installer~~ **DONE 2026-07-13** — Postshot v1.1.0 (build 2026-05-13) was already installed on Goliath at `C:\Program Files\Jawset Postshot\bin\`; installer archived to `D:\Dev\archives\postshot\`, Authenticode-verified (signed by Jascha Wetzel, Munich — matches the site imprint). CLI tested directly: `postshot-cli.exe train`/`export` work, no mesh export confirmed hands-on. **Pricing corrected 2026-07-13 (see "Engine status" above): Studio is paid (~£40/mo), not free — the CLI's `--login`/`--password` flags are almost certainly the license gate.** Given that, implement against **Nerfstudio** (Apache-2.0, genuinely free, real CLI) — comparison lives in `mcp-central-docs/projects/gestating-chains/medium-chains.md`.
+1. ~~Archive a local copy of the Postshot Studio installer~~ **DONE 2026-07-13**, then **Postshot scratched entirely 2026-07-13** (paid CLI, see decision note above — archived installer kept for reference/manual GUI use only, never load-bearing). **Engine decided: Nerfstudio.** Next real step: `ns-process-data` + `ns-train splatfacto` against a real test capture (same instinct as vcv-rack-mcp's reference patches and Boomy's Leash's ARKit survey — get real reference material before writing `SplatBackend`'s implementation, not after), then write the real `SplatBackend.generate_from_video`/`generate_from_images` wrapper around it.
 2. Write the real `SplatBackend.generate_from_video`/`generate_from_images` implementations for that engine.
 3. SQLite job persistence (v1 is in-memory only — jobs don't survive a restart).
 4. Webapp: Gallery, Generate, Jobs pages per `WEBAPP_SOTA_STANDARDS.md`.
