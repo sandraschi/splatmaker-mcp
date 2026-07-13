@@ -10,3 +10,6 @@ dist/
 webapp/dist/
 webapp/node_modules/
 *.bak
+boot.log
+boot_err.log
+*.log
