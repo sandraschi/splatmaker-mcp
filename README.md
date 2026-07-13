@@ -32,6 +32,20 @@ Researched 2026-07-13 (stars/age/CLI quality/speed/collider-mesh support/known b
 
 **Risk framing, revised 2026-07-13 (Sandra pushback, worth keeping both sides):** the "agentic-transition instability" read above assumed Postshot v1 is being actively (if distractedly) touched. The more parsimonious read: v1 is frozen in place — attention (and any v2/rebrand) has moved elsewhere, and the free-tier reset reflects "not worth maintaining a paywall we're not really selling anymore," not ongoing churn. Under that reading the risk profile inverts: a genuinely abandoned tool can't drift under you (nobody's touching it), so it's actually MORE stable day-to-day than a tool under active development. The real remaining risks are narrower: (1) today's known bugs (e.g. the PLY/SOGS attribute gap above) are permanent, never getting fixed — test against them up front, not an ongoing hazard; (2) the download can vanish with zero warning since there's no commercial relationship obligating Jawset to keep it up. **Mitigation for (2), and the actual action item: download and archive a local copy of the Studio installer now, while it's free** — a frozen binary already on disk can't disappear. Given that, Postshot Studio is back on the table as a real `SplatBackend` candidate worth testing, not ruled out — evaluate it alongside Nerfstudio rather than defaulting past it. We genuinely don't know which scenario (active churn vs. frozen abandonware) is true; the installer-archive move is cheap and correct either way.
 
+**Done, 2026-07-13:** installer archived at `D:\Dev\archives\postshot\` on Goliath (Authenticode-verified: signed by "Jascha Wetzel, Munich, DE", matching the site's own imprint exactly — legitimate, not tampered). Turned out Postshot 1.1.0 was **already installed** on Goliath (`C:\Program Files\Jawset Postshot\bin\`, build dated 2026-05-13, predates this investigation) — verified working, not just present:
+
+```
+> postshot-cli.exe --version
+Postshot v1.1.0 (2026-05-13)
+
+> postshot-cli.exe --help
+Subcommands: train, export
+```
+
+**Ground-truth confirmation of the collider-mesh finding** (previously sourced from write-ups, now from the actual `--help` output): `export`'s only output option is `--export-splat` (PLY or SPZ). No mesh, no collider, nothing geometry-adjacent in the CLI at all — the earlier secondary-source research was accurate, now verified directly.
+
+**New from the real CLI, not previously known:** `train` takes `--import` (images/video/poses/point-clouds), a real depth of tuning flags (`--profile {Splat ADC, Splat MCMC, Splat3}`, `--splat-density`, `--max-num-splats`, crop/ROI boxes, sky-model generation, anti-aliasing), and outputs a `.psht` project file that `export` then reads from separately — a real two-stage `train` → `export` pipeline, scriptable. Also present: `--login`/`--password` flags on the CLI, meaning even the free tier may want an activation check before training actually runs — **untested, next thing to verify** before assuming this works fully unattended.
+
 **Load-bearing finding, not a nice-to-have:** none of the three produce a collider mesh as a clean sidecar the way worldlabs-mcp's `collider_mesh_url` does. This means the ⚠️ warning above ("route through `blender-mcp`'s `blender_splatting` before Resonite") is **mandatory for any of these three**, not a fallback for edge cases — budget it as a required pipeline stage in whatever implements `SplatBackend`.
 
 `splat_engine_status` tool reports this live. Set `SPLATMAKER_ENGINE` env var once one is chosen — but the actual subprocess/API wrapper in `server.py`'s `SplatBackend` class still needs to be written; the env var alone does not make generation work.
@@ -58,7 +72,7 @@ See `INSTALL.md`. Short version: `uv sync`, then `uv run splatmaker-mcp` (stdio)
 
 ## Roadmap
 
-1. Archive a local copy of the Postshot Studio installer now, while it's free (cheap hedge against the download vanishing — see "Engine status" risk discussion). Then pick an engine (Postshot vs gsplat vs Nerfstudio, all three genuinely still in play) — comparison lives in `mcp-central-docs/projects/gestating-chains/medium-chains.md`.
+1. ~~Archive a local copy of the Postshot Studio installer~~ **DONE 2026-07-13** — also discovered it was already installed and working; CLI verified. Pick an engine (Postshot vs gsplat vs Nerfstudio, all three genuinely still in play) — comparison lives in `mcp-central-docs/projects/gestating-chains/medium-chains.md`. Next concrete step: test whether `postshot-cli.exe train` actually runs without `--login`/`--password` on the free tier, since that gates whether unattended automation is even possible.
 2. Write the real `SplatBackend.generate_from_video`/`generate_from_images` implementations for that engine.
 3. SQLite job persistence (v1 is in-memory only — jobs don't survive a restart).
 4. Webapp: Gallery, Generate, Jobs pages per `WEBAPP_SOTA_STANDARDS.md`.
