@@ -68,6 +68,15 @@ Worth naming honestly rather than defaulting past it: Google's Veo 3 is a genuin
 
 **Recommendation: make stage 5 pluggable, not a committed choice.** Same registry-style thinking as DeepSeek's `SplatBackend` suggestion, one layer up - a `VideoGenBackend` interface with comfyops as the default (free, local, fits the project's entire cost thesis, zero marginal cost per test) and Veo 3 as an opt-in paid alternative for comparison testing. Try comfyops first; if COLMAP genuinely can't reconstruct clean geometry from it, that's the moment to spend real money on one Veo 3 test generation - not the default starting point.
 
+**Update 2026-07-13 (later), checked what's actually current:**
+
+- Veo 3.1 still caps at 4-8s per raw generation, but "Scene Extension" now chains up to 20 times using the real last frame as the seed for the next segment, reaching ~148s. A genuinely stronger continuity mechanism than blind chaining - but frame-to-frame visual continuity is not the same guarantee as rigid 3D geometric consistency across the chain. Untested for this use case either way.
+- Wan 2.2 (already in comfyops-mcp's stack per FLEET_INDEX) caps similarly, ~5s/120 frames per generation - free does not mean unconstrained, don't assume it's automatically better than Veo on duration.
+- **Wan 2.7** (newer, still Apache-2.0, still open-weights, still free/self-hostable) has first/last-frame conditioning like Veo's Scene Extension, plus a "9-grid" mode: photograph a subject from nine angles, generates a rotation video claimed to have "accurate 3D form." This is the single most directly relevant feature found for this problem - explicitly aimed at multi-view 3D consistency, not just cinematic plausibility. Worth testing empirically (marketing claims about "accurate 3D form" are not verification), and worth checking whether comfyops-mcp's current model roster includes 2.7 or only 2.2 before assuming it's already available.
+- Kling 3.0 (Kuaishou) is the strongest Chinese *paid* alternative if a paid comparison is ever warranted - shipped native 4K Feb 2026, ahead of Veo 3.1 on raw resolution. Distinct from Wan, which is Chinese-origin but free/self-hosted.
+
+**Revised sequencing:** test Wan 2.7's 9-grid/first-last-frame features first (free, already closer in stated purpose to this exact problem than general cinematic models). Only reach for a paid API - Veo or Kling - if that specific test fails, and compare both rather than defaulting to Veo alone.
+
 ## Copyright/usage scope
 
 Pulling stills from a copyrighted film (via plex-mcp, from Sandra's own library) as private, local, non-distributed creative/compositional reference is a materially different thing from reproducing or distributing copyrighted material. This design is scoped to **personal, local, non-published use** - generating a splat of your own home inspired by a film you own, kept on your own infrastructure. That scope should stay explicit if this ever gets built, not left implicit.
