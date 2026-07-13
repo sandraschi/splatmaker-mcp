@@ -84,3 +84,6 @@ See `INSTALL.md`. Short version: `uv sync`, then `uv run splatmaker-mcp` (stdio)
 4. Webapp: Gallery, Generate, Jobs pages per `WEBAPP_SOTA_STANDARDS.md`.
 5. MCPB packaging + `glama.json` (stub present, needs real health/tier data now that the engine is real).
 6. If pursuing public release: naked-PC install testing, README screenshots, community-facing docs pass.
+7. **`operation="from_prompt"`** — an Ollama-driven prompt-to-spec stage, per DeepSeek V4 Flash's 2026-07-13 cross-examination review (`deepseek comments.md`). Not designed yet, flagged as the highest-value addition once the base pipeline has produced a real splat at least once. This is the actual thing that makes an output "feel like worldlabs" rather than "feel like a good raw splat" — see `docs/SPLAT_QUALITY_ROADMAP.md`.
+8. **`SplatBackend` as a plugin registry** rather than a single enum+env-var engine, per the same review — not urgent (current design isn't wrong), but worth doing before a second backend (e.g. a GUI-assisted manual-capture path) ever needs to coexist with Nerfstudio.
+9. **Post-3DGS quality improvements** (Scaffold-GS, 3DGS-MCMC, 2DGS, AbsGS) — full prioritized list with verified arXiv citations in `docs/SPLAT_QUALITY_ROADMAP.md`. Literature review only, nothing implemented.
