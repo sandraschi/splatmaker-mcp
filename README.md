@@ -19,7 +19,7 @@ Researched 2026-07-13 (stars/age/CLI quality/speed/collider-mesh support/known b
 | Type | CUDA rasterization library (PyTorch) | Full training/export framework (uses gsplat backend) | Proprietary desktop app (Jawset) |
 | Age | Oct 2023 | Oct 2022 | Beta Dec 2023 |
 | Stars / forks | ~5.3k / 897 | ~11.8k / 1.6k | N/A — closed source |
-| License | Apache-2.0 | Apache-2.0 | Proprietary, currently free (post-beta pricing reset — could revert) |
+| License | Apache-2.0 | Apache-2.0 | Proprietary. Verified live on jawset.com 2026-07-13: all three tiers (Free/Indie/Studio) are €0.00/month. Was paid as recently as Feb 2026 (Indie ~€17/mo), reset to free in an undocumented restructure. Single-maintainer sole proprietorship (Jascha Wetzel, Munich, Germany) — real bus-factor/reversal risk, not a funded company |
 | Language | Python + CUDA | Python + CUDA (via gsplat) | Not published, native Windows app |
 | CLI | None — write your own training script | Real CLI: `ns-process-data`, `ns-train`, `ns-export`, `ns-render` | GUI-first; CLI historically gated to paid Studio tier |
 | **Collider mesh sidecar** | **No** — pure rasterizer | **Partial** — `ns-export tsdf`/`poisson`, separate command, untested against Splatfacto specifically | **No** — PLY splat + camera poses only |
