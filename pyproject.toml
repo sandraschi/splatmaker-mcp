@@ -4,6 +4,12 @@ version = "0.1.0"
 description = "Self-hosted FOSS Gaussian-splat generation MCP — worldlabs-mcp alternative, zero marginal cost, local 4090 inference"
 requires-python = ">=3.12"
 dependencies = [
+    # Floor pinned per fleet doctrine (JUNE_2026_STANDARDS_BAR.md): 3.2.0 is a
+    # deliberate low floor for compat, NOT the target version. uv resolves to
+    # whatever is latest <4.0 at sync time - verified 2026-07-13 this correctly
+    # resolves to 3.4.4 (current PyPI SOTA), not 3.2.0. Do not "fix" this by
+    # bumping the floor number; check PyPI if you want to know the real current
+    # version, don't trust this string as a version report.
     "fastmcp>=3.2.0,<4",
     "starlette>=1.0",
     "uvicorn>=0.30",
@@ -14,6 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.24",
     "ruff>=0.6",
 ]
 
@@ -30,3 +37,6 @@ packages = ["src/splatmaker_mcp"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

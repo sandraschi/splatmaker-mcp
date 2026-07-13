@@ -217,10 +217,22 @@ async def _register_with_hub() -> None:
     for attempt in range(1):  # non-fatal, single attempt at startup; retry loop is a fast-follow
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
-                await client.post(HUB_REGISTER_URL, json=payload)
-                logger.info("Registered with mcp-federation-hub")
+                resp = await client.post(HUB_REGISTER_URL, json=payload)
+                if resp.status_code < 300:
+                    logger.info("Registered with mcp-federation-hub")
+                else:
+                    # Honest logging: a non-exception response is not success.
+                    # As of 2026-07-13 the hub does not yet implement
+                    # POST /api/v1/register (see ORCHESTRATION_HIERARCHY.md
+                    # action item) - this branch is expected to fire until
+                    # that lands, and should NOT be logged as a registration.
+                    logger.warning(
+                        "Hub registration got HTTP %s (not yet implemented on hub side, "
+                        "see ORCHESTRATION_HIERARCHY.md) - server running standalone",
+                        resp.status_code,
+                    )
                 return
-        except Exception as exc:  # noqa: BLE001 — intentionally broad, non-fatal per hub contract
+        except Exception as exc:  # noqa: BLE001 - intentionally broad, non-fatal per hub contract
             logger.warning("Hub registration failed (non-fatal, hub may not be running): %s", exc)
 
 

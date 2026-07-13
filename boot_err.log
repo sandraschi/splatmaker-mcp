@@ -1,0 +1,7 @@
+2026-07-13 14:12:25,792 INFO httpx: HTTP Request: POST http://localhost:10857/api/v1/register "HTTP/1.1 404 Not Found"
+2026-07-13 14:12:25,797 WARNING splatmaker_mcp: Hub registration got HTTP 404 (not yet implemented on hub side, see ORCHESTRATION_HIERARCHY.md) - server running standalone
+INFO:     Started server process [265632]
+INFO:     Waiting for application startup.
+2026-07-13 14:12:25,852 INFO mcp.server.streamable_http_manager: StreamableHTTP session manager started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:11091 (Press CTRL+C to quit)

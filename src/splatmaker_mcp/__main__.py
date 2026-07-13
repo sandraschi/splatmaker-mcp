@@ -28,11 +28,18 @@ async def _health(request):  # noqa: ANN001 — Starlette handler signature
 
 def build_http_app():
     """Starlette app: /api/health (fleet contract) + FastMCP's own /mcp mount.
-    Starlette chosen per STARLETTE_NO_PYDANTIC_STANDARD — this server's REST
+    Starlette chosen per STARLETTE_NO_PYDANTIC_STANDARD - this server's REST
     surface (health + job status) doesn't yet earn FastAPI/Swagger; revisit
-    if the webapp grows a genuinely browsable API surface."""
+    if the webapp grows a genuinely browsable API surface.
+
+    NOTE: use add_route(), not routes.append() - the .routes property on
+    FastMCP's StarletteWithLifespan doesn't reliably back the live router
+    table; add_route() is the real registration API and was verified to
+    work during scaffold smoke-testing (routes.append() silently produced
+    404s despite the route object existing in the returned list).
+    """
     starlette_app = mcp.http_app(path="/mcp")
-    starlette_app.routes.append(Route("/api/health", _health))
+    starlette_app.add_route("/api/health", _health)
     return starlette_app
 
 
@@ -45,11 +52,14 @@ def main() -> None:
     if args.http:
         import uvicorn
 
-        async def _startup():
-            await _register_with_hub()
+        # Registration run synchronously before uvicorn takes over rather than
+        # via an ASGI startup hook - the Starlette Router object returned by
+        # mcp.http_app() doesn't consistently expose on_startup/add_event_handler
+        # across FastMCP/Starlette versions (confirmed broken on Starlette 1.3.1
+        # during scaffold verification). This is simpler and version-independent.
+        asyncio.run(_register_with_hub())
 
         app = build_http_app()
-        app.router.on_startup.append(_startup)
         uvicorn.run(app, host="127.0.0.1", port=args.port)
     else:
         mcp.run()  # stdio transport

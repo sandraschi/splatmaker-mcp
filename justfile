@@ -4,10 +4,10 @@ default:
     @just --list
 
 sync:
-    uv sync
+    uv sync --extra dev
 
 test:
-    uv run pytest -v
+    uv run --extra dev pytest -v
 
 run-stdio:
     uv run splatmaker-mcp
@@ -16,10 +16,10 @@ run-http:
     uv run splatmaker-mcp --http --port 11091
 
 lint:
-    uv run ruff check src tests
+    uv run --extra dev ruff check src tests
 
 fmt:
-    uv run ruff format src tests
+    uv run --extra dev ruff format src tests
 
 health:
     curl http://localhost:11091/api/health

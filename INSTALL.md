@@ -35,10 +35,11 @@ Add to your MCP client config:
 ## Verify
 
 ```powershell
-uv run pytest
+uv sync --extra dev
+uv run --extra dev pytest
 ```
 
-Should pass 6/6 — all tests are honesty-standard-compliant smoke tests (they verify the schema and the honest `not_implemented` responses, not a fake engine).
+Should pass 6/6. Note: plain `uv run pytest` (without `--extra dev`) will fail with "program not found" — `uv run` auto-resyncs to the base dependency set on every invocation, pruning the dev extras group. Always pass `--extra dev`, or use the `justfile` targets (`just test`, `just lint`) which do this correctly.
 
 ## Engine setup (not yet applicable)
 
