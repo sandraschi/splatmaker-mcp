@@ -2,7 +2,7 @@
 
 **Self-hosted, zero-marginal-cost Gaussian-splat generation.** The FOSS alternative to worldlabs-mcp's Marble API — point it at a video or a set of images, get a navigable 3D Gaussian-splat world back, run entirely on local hardware (RTX 4090).
 
-**Status: scaffold, v0.1.0.** Server shell, tool schemas, job tracking, fleet health/registration contract, and webapp skeleton are real and working. **The splat-generation engine itself is not yet wired** — see "Engine status" below. This is deliberate (Implementation Honesty Standard), not an oversight: the tools exist and respond honestly with `not_implemented` rather than faking success.
+**Status: v0.2.0, engine implemented.** Server shell, tool schemas, job tracking, fleet health/registration contract, webapp skeleton, AND the real Nerfstudio/Splatfacto subprocess pipeline are all real and working. `uv sync --extra engine` installs torch+CUDA/nerfstudio/gsplat (verified on Goliath 2026-07-13: torch 2.6.0+cu124, CUDA true, RTX 4090 detected, gsplat 1.0.0). What's genuinely still pending: a full end-to-end training run against real capture data — nerfstudio's own Google Drive-hosted demo datasets are currently blocked by an external permission/quota issue on Google's end (not our code, tried two different capture names, same failure both times), so mechanical CLI/pipeline verification (flags checked against real `--help` output, executables confirmed present, control flow unit-tested, 8/8 passing) is done, but a real photorealistic splat hasn't been produced yet. That was always the plan anyway — needs Sandra's own real photos/video, same "get real reference material before writing the wrapper" discipline as vcv-rack-mcp's reference patches and Boomy's Leash's ARKit survey.
 
 ## Why this exists
 
@@ -78,9 +78,9 @@ See `INSTALL.md`. Short version: `uv sync`, then `uv run splatmaker-mcp` (stdio)
 
 ## Roadmap
 
-1. ~~Archive a local copy of the Postshot Studio installer~~ **DONE 2026-07-13**, then **Postshot scratched entirely 2026-07-13** (paid CLI, see decision note above — archived installer kept for reference/manual GUI use only, never load-bearing). **Engine decided: Nerfstudio.** Next real step: `ns-process-data` + `ns-train splatfacto` against a real test capture (same instinct as vcv-rack-mcp's reference patches and Boomy's Leash's ARKit survey — get real reference material before writing `SplatBackend`'s implementation, not after), then write the real `SplatBackend.generate_from_video`/`generate_from_images` wrapper around it.
-2. Write the real `SplatBackend.generate_from_video`/`generate_from_images` implementations for that engine.
+1. ~~Archive a local copy of the Postshot Studio installer~~ **DONE 2026-07-13**, then **Postshot scratched entirely 2026-07-13** (paid CLI, see decision note above — archived installer kept for reference/manual GUI use only, never load-bearing). **Engine decided AND implemented 2026-07-13: Nerfstudio.** `SplatBackend` is real — `ns-process-data` → `ns-train splatfacto` → `ns-export gaussian-splat`, background async execution, flags verified against real `--help` output.
+2. **Real end-to-end run against real capture data** — the one thing genuinely not done yet. Nerfstudio's own Google Drive demo datasets are currently blocked by an external Google permission/quota issue (tried twice, same failure). Needs Sandra's own photos/video of a real space.
 3. SQLite job persistence (v1 is in-memory only — jobs don't survive a restart).
 4. Webapp: Gallery, Generate, Jobs pages per `WEBAPP_SOTA_STANDARDS.md`.
-5. MCPB packaging + `glama.json` (stub present, needs real health/tier data once engine is wired).
+5. MCPB packaging + `glama.json` (stub present, needs real health/tier data now that the engine is real).
 6. If pursuing public release: naked-PC install testing, README screenshots, community-facing docs pass.

@@ -41,6 +41,16 @@ uv run --extra dev pytest
 
 Should pass 6/6. Note: plain `uv run pytest` (without `--extra dev`) will fail with "program not found" — `uv run` auto-resyncs to the base dependency set on every invocation, pruning the dev extras group. Always pass `--extra dev`, or use the `justfile` targets (`just test`, `just lint`) which do this correctly.
 
-## Engine setup (not yet applicable)
+## Engine setup (Nerfstudio, decided 2026-07-13)
 
-No engine is wired yet — see README.md "Engine status". This section will be filled in once one is chosen and implemented.
+```powershell
+uv sync --extra engine
+```
+
+Real, sizeable install (~276 packages: torch+CUDA, nerfstudio, gsplat). Verified working on Goliath: `torch 2.6.0+cu124`, CUDA available, RTX 4090 detected. Requires Python 3.12 specifically (`requires-python = ">=3.12,<3.13"` in pyproject.toml) - nerfstudio's `open3d` dependency has no Python 3.13 wheel as of 2026-07-13. If your venv is on 3.13, rebuild it: `uv venv --python 3.12` then `uv sync --extra engine`.
+
+Verify:
+```powershell
+uv run --extra engine ns-train --help
+uv run --extra engine python -c "import torch; print(torch.cuda.is_available())"
+```
