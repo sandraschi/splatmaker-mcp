@@ -14,6 +14,7 @@ from starlette.routing import Route
 
 from splatmaker_mcp.server import (
     BACKEND_PORT,
+    _do_shutdown,
     _register_with_hub,
     health_payload,
     mcp,
@@ -22,8 +23,13 @@ from splatmaker_mcp.server import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 
-async def _health(request):  # noqa: ANN001 — Starlette handler signature
+async def _health(request):  # noqa: ANN001 - Starlette handler signature
     return JSONResponse(health_payload())
+
+
+async def _shutdown(request):  # noqa: ANN001 - Starlette handler signature
+    await _do_shutdown()
+    return JSONResponse({"status": "shutting_down", "message": "Server will exit in ~0.5s"})
 
 
 def build_http_app():
@@ -40,6 +46,7 @@ def build_http_app():
     """
     starlette_app = mcp.http_app(path="/mcp")
     starlette_app.add_route("/api/health", _health)
+    starlette_app.add_route("/api/shutdown", _shutdown, methods=["POST"])
     return starlette_app
 
 

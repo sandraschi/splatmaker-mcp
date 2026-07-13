@@ -244,3 +244,34 @@ def health_payload() -> dict:
         "uptime_seconds": round(time.monotonic() - _start_time, 1),
         "engine_configured": backend.is_configured(),
     }
+
+
+# ---------------------------------------------------------------------------
+# Shutdown (fleet mandate 2026-07-13, per ORCHESTRATION_HIERARCHY.md #4):
+# every server needs one shutdown implementation shared by both the REST
+# endpoint and the MCP tool - never two independently-drifting code paths.
+# ---------------------------------------------------------------------------
+
+async def _do_shutdown(delay_seconds: float = 0.5) -> None:
+    """Schedule a graceful exit after `delay_seconds`, giving the caller
+    (REST response or MCP tool result) time to actually flush before the
+    process dies. Uses os._exit rather than sys.exit so it works reliably
+    from inside a background asyncio task regardless of what's on the call
+    stack - sys.exit only raises SystemExit in the current thread's stack,
+    which is not guaranteed to unwind an ASGI server cleanly."""
+    import os
+
+    async def _exit_after_delay() -> None:
+        await asyncio.sleep(delay_seconds)
+        logger.info("Shutdown requested - exiting now")
+        os._exit(0)  # noqa: SLF001 - intentional hard exit, see docstring
+
+    asyncio.create_task(_exit_after_delay())
+
+
+@mcp.tool()
+async def server_shutdown(ctx: Context) -> dict:
+    """Gracefully shut down this server. Matches the REST /api/shutdown
+    endpoint - both call the same underlying implementation."""
+    await _do_shutdown()
+    return {"status": "shutting_down", "message": "Server will exit in ~0.5s"}

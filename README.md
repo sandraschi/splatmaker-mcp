@@ -12,11 +12,25 @@ There's also a plausible case this is useful beyond this fleet — the Resonite 
 
 ## Engine status
 
-| Engine | Status |
-|---|---|
-| Postshot CLI | Not evaluated |
-| gsplat | Not evaluated |
-| Nerfstudio-derived | Not evaluated |
+Researched 2026-07-13 (stars/age/CLI quality/speed/collider-mesh support/known bugs — sources: PyPI, GitHub, radiancefields.com, thefuture3d.com, polyvia3d.com benchmark, docs.nerf.studio). **None chosen for implementation yet** — this is a comparison to inform the choice, not a decision.
+
+| | gsplat | Nerfstudio | Postshot |
+|---|---|---|---|
+| Type | CUDA rasterization library (PyTorch) | Full training/export framework (uses gsplat backend) | Proprietary desktop app (Jawset) |
+| Age | Oct 2023 | Oct 2022 | Beta Dec 2023 |
+| Stars / forks | ~5.3k / 897 | ~11.8k / 1.6k | N/A — closed source |
+| License | Apache-2.0 | Apache-2.0 | Proprietary, currently free (post-beta pricing reset — could revert) |
+| Language | Python + CUDA | Python + CUDA (via gsplat) | Not published, native Windows app |
+| CLI | None — write your own training script | Real CLI: `ns-process-data`, `ns-train`, `ns-export`, `ns-render` | GUI-first; CLI historically gated to paid Studio tier |
+| **Collider mesh sidecar** | **No** — pure rasterizer | **Partial** — `ns-export tsdf`/`poisson`, separate command, untested against Splatfacto specifically | **No** — PLY splat + camera poses only |
+| Speed (RTX 4090) | ~8 min (fastest) | ~10 min | ~30 min (different benchmark scale) |
+| VRAM | ~4GB | ~6GB | Not specified |
+| Quality (PSNR, same benchmark) | 28.1 dB | 27.9 dB | Not benchmarked head-to-head |
+| Known gaps | JIT CUDA compile breaks on some PyTorch/CUDA combos; zero pipeline, all DIY glue | No fisheye/equirectangular/orthographic camera support (perspective only) — check against actual capture method | PLY exports have been reported missing attributes (normals, opacity, scale, rotation, SH coefficients) needed by some downstream tools (SOGS) |
+
+**Working recommendation (not yet implemented):** Nerfstudio — real CLI suited to subprocess wrapping, fully Python (fits fleet's `uv`-first philosophy, zero extra glue vs. gsplat), PSNR gap vs. alternatives is within "barely perceptible" range per every source checked. Postshot's GUI-first design and historically-paywalled CLI make it a weaker fit for unattended MCP dispatch despite being the nicest hand-driven tool.
+
+**Load-bearing finding, not a nice-to-have:** none of the three produce a collider mesh as a clean sidecar the way worldlabs-mcp's `collider_mesh_url` does. This means the ⚠️ warning above ("route through `blender-mcp`'s `blender_splatting` before Resonite") is **mandatory for any of these three**, not a fallback for edge cases — budget it as a required pipeline stage in whatever implements `SplatBackend`.
 
 `splat_engine_status` tool reports this live. Set `SPLATMAKER_ENGINE` env var once one is chosen — but the actual subprocess/API wrapper in `server.py`'s `SplatBackend` class still needs to be written; the env var alone does not make generation work.
 

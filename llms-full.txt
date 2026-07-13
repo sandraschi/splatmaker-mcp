@@ -33,11 +33,11 @@ Unlike worldlabs-mcp, which returns assets.mesh.collider_mesh_url (a GLB collisi
 
 Registered in mcp-central-docs/operations/WEBAPP_PORTS.md (ports 11091/11092). Registers with mcp-federation-hub on HTTP-transport startup per the three-layer orchestration hierarchy (mcp-central-docs/architecture/ORCHESTRATION_HIERARCHY.md) - this server is a Layer 3 domain node, not a registry or a client of Fritz. Cataloged as a "medium" tier gestating chain (not yet promoted to a full build brief) in mcp-central-docs/projects/gestating-chains/medium-chains.md, which also carries the original Postshot/gsplat/Nerfstudio engine-choice discussion this scaffold deliberately did not resolve.
 
-## Engine selection (open decision, deliberately not made by this scaffold)
+## Engine selection (researched 2026-07-13, not yet implemented)
 
-Three candidates, none evaluated yet as of 2026-07-13:
-- Postshot: commercial-with-free-tier desktop app, has a CLI, generally considered the easiest to get a good splat out of quickly.
-- gsplat: research-grade Python library (Nerfstudio's rendering backbone), most flexible, most setup effort.
-- Nerfstudio-derived pipelines: full framework, most features, steepest learning curve, most likely to be the "known community brainteaser" referenced when this idea was first discussed.
+Three candidates, compared 2026-07-13 (see README.md for the full table):
+- Postshot: proprietary Windows desktop app (Jawset), GUI-first, no collider mesh export, CLI historically paywalled (currently free during a pricing restructure). ~2.5 years old, no public repo. Best hand-driven UX, worst fit for unattended subprocess dispatch.
+- gsplat: Apache-2.0 Python/CUDA library, ~5.3k GitHub stars, no CLI at all (write your own training script), no mesh export, fastest raw training (~8 min on RTX 4090) and lowest VRAM (~4GB) of the three, but zero pipeline - SfM, export, everything is DIY glue code.
+- Nerfstudio: Apache-2.0 Python framework built on gsplat, ~11.8k GitHub stars, real designed CLI (ns-process-data, ns-train, ns-export, ns-render), partial mesh export via ns-export tsdf/poisson (untested against its own Splatfacto gaussian method specifically), no fisheye/equirectangular/orthographic camera support.
 
-Whoever picks up this scaffold next should benchmark one of these against a real capture (the reference-patches pattern from vcv-rack-mcp and Boomy's Leash's ARKit survey both suggest: get a small set of real test captures before writing the wrapper, not after) before committing SplatBackend's real implementation to a specific engine.
+Working recommendation, not yet acted on: Nerfstudio, on CLI fitness and Python-native fit with the fleet's uv-first tooling, not on raw speed. Load-bearing finding regardless of which wins: none of the three produce a collider mesh as a clean sidecar the way worldlabs-mcp does - blender-mcp's blender_splatting collision-mesh generation is a mandatory pipeline stage for any of these three, not an edge-case fallback.
