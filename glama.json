@@ -1,0 +1,14 @@
+{
+  "name": "splatmaker-mcp",
+  "description": "Self-hosted, zero-marginal-cost Gaussian-splat generation - FOSS alternative to worldlabs-mcp's Marble API",
+  "version": "0.1.0",
+  "author": "sandraschi",
+  "repository": "https://github.com/sandraschi/splatmaker-mcp",
+  "tier": "scaffold",
+  "status": "engine not yet wired - see README Engine status section",
+  "tags": ["3d", "gaussian-splatting", "vr", "resonite", "vrchat", "self-hosted", "foss"],
+  "health": {
+    "endpoint": "http://localhost:11091/api/health",
+    "checked": false
+  }
+}

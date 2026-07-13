@@ -1,0 +1,43 @@
+# splatmaker-mcp (full reference)
+
+## Purpose
+
+Self-hosted, zero-marginal-cost Gaussian-splat generation, wrapping one of several candidate FOSS engines (Postshot CLI, gsplat, Nerfstudio-derived pipelines - none chosen yet). Built as the cost-conscious alternative to worldlabs-mcp's Marble API for the same downstream chain: photo/video capture -> navigable 3D splat world -> blender-mcp finishing -> resonite-mcp / Resonite or VRChat world import.
+
+## Status honesty
+
+This is a v0.1.0 scaffold. What is real: the FastMCP 3.2+ server, dual transport (stdio for Claude Desktop/Cursor, streamable HTTP on /mcp for the webapp and fleet hub), the splat_generate portmanteau tool's full schema and job-tracking logic, the splat_engine_status introspection tool, the /api/health endpoint and mcp-federation-hub registration call per ORCHESTRATION_HIERARCHY.md's fleet contract, and a passing test suite (6 tests) that verifies the honest not_implemented behavior rather than a fake success path.
+
+What is not yet real: the actual splat-generation engine. generate_from_video and generate_from_images will return status=not_implemented until an engine is chosen and its SplatBackend subclass is written in server.py. No SQLite persistence yet (jobs are in-memory, lost on restart). No webapp built yet (ports reserved: 11091 backend, 11092 frontend). No MCPB bundle. No glama.json health data beyond a stub.
+
+## Tool reference
+
+### splat_generate(operation, video_path=None, image_paths=None, job_id=None)
+
+Portmanteau tool. operation is one of:
+- from_video: start a job from a local video file path. Requires video_path. Returns {job_id, status, message}. status will be "not_implemented" until an engine is wired.
+- from_images: start a job from a list of local image file paths. Requires image_paths. Same return shape as from_video.
+- status: check a job's current status. Requires job_id. Returns {job_id, status, message}.
+- list: list all known jobs (in-memory, this process's lifetime only). Returns {jobs: [{job_id, status, kind}, ...]}.
+- get_asset: return the asset paths for a completed job. Requires job_id. Errors if the job is not in "done" status.
+
+### splat_engine_status()
+
+No arguments. Returns {engine, configured, note} describing which engine (if any) is set via the SPLATMAKER_ENGINE environment variable, and whether a real implementation exists for it (currently: no, for any value).
+
+## Critical downstream integration note: no collision mesh
+
+Unlike worldlabs-mcp, which returns assets.mesh.collider_mesh_url (a GLB collision mesh) alongside every generated splat, this server's output has no collision geometry. Any consumer - blender-mcp import, direct Resonite/VRChat world import - MUST route the raw splat through blender-mcp's blender_splatting tool (import, generate collision mesh, export) before the result is usable as a walkable VR space. Skipping this step produces a splat that looks correct in every screenshot and has no floor, walls, or furniture collision once someone is actually standing in it. This exact class of mistake was made once already in fleet documentation for worldlabs-mcp (in the opposite direction - assuming Blender needed to compute a collision mesh that worldlabs already provided) - see mcp-central-docs/architecture/FLEET_DEEP_ANALYSIS_2026-07-13.md section 2.2.1 for the full history. Do not repeat it here in the other direction.
+
+## Fleet position
+
+Registered in mcp-central-docs/operations/WEBAPP_PORTS.md (ports 11091/11092). Registers with mcp-federation-hub on HTTP-transport startup per the three-layer orchestration hierarchy (mcp-central-docs/architecture/ORCHESTRATION_HIERARCHY.md) - this server is a Layer 3 domain node, not a registry or a client of Fritz. Cataloged as a "medium" tier gestating chain (not yet promoted to a full build brief) in mcp-central-docs/projects/gestating-chains/medium-chains.md, which also carries the original Postshot/gsplat/Nerfstudio engine-choice discussion this scaffold deliberately did not resolve.
+
+## Engine selection (open decision, deliberately not made by this scaffold)
+
+Three candidates, none evaluated yet as of 2026-07-13:
+- Postshot: commercial-with-free-tier desktop app, has a CLI, generally considered the easiest to get a good splat out of quickly.
+- gsplat: research-grade Python library (Nerfstudio's rendering backbone), most flexible, most setup effort.
+- Nerfstudio-derived pipelines: full framework, most features, steepest learning curve, most likely to be the "known community brainteaser" referenced when this idea was first discussed.
+
+Whoever picks up this scaffold next should benchmark one of these against a real capture (the reference-patches pattern from vcv-rack-mcp and Boomy's Leash's ARKit survey both suggest: get a small set of real test captures before writing the wrapper, not after) before committing SplatBackend's real implementation to a specific engine.

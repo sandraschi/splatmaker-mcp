@@ -1,0 +1,18 @@
+# splatmaker-mcp
+
+Self-hosted, zero-marginal-cost Gaussian-splat generation. FOSS alternative to worldlabs-mcp's Marble API - point at a video or images, get a navigable 3D Gaussian-splat world, runs entirely on local GPU.
+
+Status: scaffold (v0.1.0). Server shell, tools, and job tracking are real; the splat-generation engine itself is not yet wired - see README "Engine status". Tools respond honestly with not_implemented rather than faking success.
+
+## Tools
+
+- splat_generate(operation, video_path?, image_paths?, job_id?) - generate or inspect splat jobs. operation in [from_video, from_images, status, list, get_asset]
+- splat_engine_status() - reports which FOSS engine (if any) is configured
+
+## Notable
+
+Downstream consumers must run the raw splat through blender-mcp's blender_splatting tool to get a usable collision mesh - this server does not produce one (unlike worldlabs-mcp, which does). See README.md for details.
+
+## Ports
+
+Backend (MCP + REST): 11091. Frontend (dashboard, not yet built): 11092.
