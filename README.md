@@ -22,7 +22,7 @@ Researched 2026-07-13 (stars/age/CLI quality/speed/collider-mesh support/known b
 | License | Apache-2.0 | Apache-2.0 | Proprietary. Verified live on jawset.com 2026-07-13: all three tiers (Free/Indie/Studio) are €0.00/month. Was paid as recently as Feb 2026 (Indie ~€17/mo), reset to free in an undocumented restructure. Single-maintainer sole proprietorship (Jascha Wetzel, Munich, Germany) — real bus-factor/reversal risk, not a funded company |
 | Language | Python + CUDA | Python + CUDA (via gsplat) | Not published, native Windows app |
 | CLI | None — write your own training script | Real CLI: `ns-process-data`, `ns-train`, `ns-export`, `ns-render` | GUI-first; CLI historically gated to paid Studio tier |
-| **Collider mesh sidecar** | **No** — pure rasterizer | **Partial** — `ns-export tsdf`/`poisson`, separate command, untested against Splatfacto specifically | **No** — PLY splat + camera poses only |
+| **Collider mesh sidecar** | **No** — pure rasterizer | **Partial** — `ns-export tsdf`/`poisson`, separate command, untested against Splatfacto specifically | **No, confirmed via direct `postshot-cli.exe --help`/`export` testing 2026-07-13** — only output option is `--export-splat` (PLY/SPZ), no mesh flag exists at all |
 | Speed (RTX 4090) | ~8 min (fastest) | ~10 min | ~30 min (different benchmark scale) |
 | VRAM | ~4GB | ~6GB | Not specified |
 | Quality (PSNR, same benchmark) | 28.1 dB | 27.9 dB | Not benchmarked head-to-head |
