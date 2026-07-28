@@ -10,7 +10,7 @@ dependencies = [
     # resolves to 3.4.4 (current PyPI SOTA), not 3.2.0. Do not "fix" this by
     # bumping the floor number; check PyPI if you want to know the real current
     # version, don't trust this string as a version report.
-    "fastmcp>=3.2.0,<4",
+    "fastmcp>=3.4.4,<4",
     "starlette>=1.0",
     "uvicorn>=0.30",
     "pydantic>=2.0",
@@ -21,7 +21,7 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
-    "ruff>=0.6",
+    "ruff>=0.16.0,<0.17",
 ]
 engine = [
     # Nerfstudio pulls gsplat as its rasterization backend automatically -
@@ -56,6 +56,8 @@ packages = ["src/splatmaker_mcp"]
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
 [tool.uv]
 # nerfstudio's dependency tree pulls in newrawpy, which only has pre-release
 # versions satisfying nerfstudio's constraint as of 2026-07-13 - found this

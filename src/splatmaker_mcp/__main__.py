@@ -8,9 +8,7 @@ import argparse
 import asyncio
 import logging
 
-from starlette.applications import Starlette
 from starlette.responses import JSONResponse
-from starlette.routing import Route
 
 from splatmaker_mcp.server import (
     BACKEND_PORT,
@@ -52,7 +50,9 @@ def build_http_app():
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="splatmaker-mcp")
-    parser.add_argument("--http", action="store_true", help="Run streamable HTTP transport instead of stdio")
+    parser.add_argument(
+        "--http", action="store_true", help="Run streamable HTTP transport instead of stdio"
+    )
     parser.add_argument("--port", type=int, default=BACKEND_PORT)
     args = parser.parse_args()
 

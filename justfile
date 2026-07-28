@@ -1,3 +1,5 @@
+set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
+
 # justfile - splatmaker-mcp task runner
 
 default:

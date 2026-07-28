@@ -24,7 +24,7 @@ import sys
 import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Literal
 
@@ -49,7 +49,8 @@ _start_time = time.monotonic()
 # Engine abstraction — pluggable, honestly not-yet-wired (see module docstring)
 # ---------------------------------------------------------------------------
 
-class SplatEngine(str, Enum):
+
+class SplatEngine(StrEnum):
     """NERFSTUDIO is the decided, implemented engine. Others kept as enum
     values for is_configured()/status reporting only - no implementation
     exists for them and none is planned (see module docstring)."""
@@ -72,7 +73,9 @@ class SplatBackend:
     not guessed - see ns_*_help.txt in repo root.
     """
 
-    def __init__(self, engine: SplatEngine = SplatEngine.UNSET, max_iterations: int = 15000) -> None:
+    def __init__(
+        self, engine: SplatEngine = SplatEngine.UNSET, max_iterations: int = 15000
+    ) -> None:
         # max_iterations default is HALF nerfstudio's own default (30000) -
         # deliberate: full default is tuned for research-grade quality over
         # unattended speed; 15000 is a documented tradeoff, not a silent one.
@@ -84,7 +87,10 @@ class SplatBackend:
         self._work_root.mkdir(parents=True, exist_ok=True)
 
     def is_configured(self) -> bool:
-        return self._resolve_exe("ns-train") is not None and self._resolve_exe("ns-process-data") is not None
+        return (
+            self._resolve_exe("ns-train") is not None
+            and self._resolve_exe("ns-process-data") is not None
+        )
 
     @staticmethod
     def _resolve_exe(name: str) -> str | None:
@@ -103,17 +109,25 @@ class SplatBackend:
             *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await proc.communicate()
-        return proc.returncode or 0, stdout.decode(errors="replace"), stderr.decode(errors="replace")
+        return (
+            proc.returncode or 0,
+            stdout.decode(errors="replace"),
+            stderr.decode(errors="replace"),
+        )
 
     def _find_config_yml(self, output_dir: Path) -> Path | None:
         """Nerfstudio nests output as <output_dir>/<experiment>/splatfacto/
         <timestamp>/config.yml - experiment name defaults to the input
         dataset dirname, timestamp is runtime-generated, so this has to
         glob rather than assume a fixed path."""
-        candidates = sorted(output_dir.glob("**/splatfacto/*/config.yml"), key=lambda p: p.stat().st_mtime)
+        candidates = sorted(
+            output_dir.glob("**/splatfacto/*/config.yml"), key=lambda p: p.stat().st_mtime
+        )
         return candidates[-1] if candidates else None
 
-    async def _pipeline(self, kind: Literal["images", "video"], input_path: str, job_id: str) -> EngineResult:
+    async def _pipeline(
+        self, kind: Literal["images", "video"], input_path: str, job_id: str
+    ) -> EngineResult:
         if not self.is_configured():
             return EngineResult(
                 ok=False,
@@ -131,10 +145,19 @@ class SplatBackend:
 
         # Stage 1: ns-process-data {images|video} --data <in> --output-dir <out>
         rc, _out, err = await self._run(
-            [self._resolve_exe("ns-process-data"), kind, "--data", input_path, "--output-dir", str(processed_dir)]
+            [
+                self._resolve_exe("ns-process-data"),
+                kind,
+                "--data",
+                input_path,
+                "--output-dir",
+                str(processed_dir),
+            ]
         )
         if rc != 0:
-            return EngineResult(ok=False, message=f"ns-process-data failed (exit {rc}): {err[-1500:]}")
+            return EngineResult(
+                ok=False, message=f"ns-process-data failed (exit {rc}): {err[-1500:]}"
+            )
 
         # Stage 2: ns-train splatfacto --data <processed> --output-dir <out> --vis tensorboard
         # (tensorboard, not the default 'viewer', deliberately - viewer opens a
@@ -144,11 +167,16 @@ class SplatBackend:
             [
                 self._resolve_exe("ns-train"),
                 "splatfacto",
-                "--data", str(processed_dir),
-                "--output-dir", str(output_dir),
-                "--vis", "tensorboard",
-                "--max-num-iterations", str(self.max_iterations),
-                "--viewer.quit-on-train-completion", "True",
+                "--data",
+                str(processed_dir),
+                "--output-dir",
+                str(output_dir),
+                "--vis",
+                "tensorboard",
+                "--max-num-iterations",
+                str(self.max_iterations),
+                "--viewer.quit-on-train-completion",
+                "True",
             ]
         )
         if rc != 0:
@@ -156,15 +184,19 @@ class SplatBackend:
 
         config_path = self._find_config_yml(output_dir)
         if not config_path:
-            return EngineResult(ok=False, message="ns-train completed but no config.yml found under output_dir")
+            return EngineResult(
+                ok=False, message="ns-train completed but no config.yml found under output_dir"
+            )
 
         # Stage 3: ns-export gaussian-splat --load-config <config> --output-dir <out>
         rc, _out, err = await self._run(
             [
                 self._resolve_exe("ns-export"),
                 "gaussian-splat",
-                "--load-config", str(config_path),
-                "--output-dir", str(export_dir),
+                "--load-config",
+                str(config_path),
+                "--output-dir",
+                str(export_dir),
             ]
         )
         if rc != 0:
@@ -177,7 +209,11 @@ class SplatBackend:
         return EngineResult(
             ok=True,
             message="done",
-            asset_paths={"ply": str(ply_candidates[0]), "config": str(config_path), "job_dir": str(job_dir)},
+            asset_paths={
+                "ply": str(ply_candidates[0]),
+                "config": str(config_path),
+                "job_dir": str(job_dir),
+            },
         )
 
     async def generate_from_video(self, video_path: str, job_id: str) -> EngineResult:
@@ -205,13 +241,16 @@ class SplatBackend:
         return await self._pipeline("images", next(iter(parents)), job_id)
 
 
-backend = SplatBackend(engine=SplatEngine.NERFSTUDIO)  # decided 2026-07-13; is_configured() checks the real CLI is present
+backend = SplatBackend(
+    engine=SplatEngine.NERFSTUDIO
+)  # decided 2026-07-13; is_configured() checks the real CLI is present
 
 
 # ---------------------------------------------------------------------------
 # Job tracking (in-memory for v1 — SQLite persistence is a fast-follow, not
 # a v1 requirement; flagged here rather than silently deferred)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class Job:
@@ -229,6 +268,7 @@ _jobs: dict[str, Job] = {}
 # ---------------------------------------------------------------------------
 # MCP tool — portmanteau pattern per fleet TOOL_DESIGN_STANDARDS
 # ---------------------------------------------------------------------------
+
 
 async def _run_job(job: Job, coro) -> None:
     """Background task wrapper - runs a pipeline coroutine without blocking
@@ -276,7 +316,11 @@ async def splat_generate(
         job = Job(id=jid, kind="from_video", status="queued", created_at=time.time())
         _jobs[jid] = job
         asyncio.create_task(_run_job(job, backend.generate_from_video(video_path, jid)))
-        return {"job_id": jid, "status": job.status, "message": "pipeline started in background, poll with status"}
+        return {
+            "job_id": jid,
+            "status": job.status,
+            "message": "pipeline started in background, poll with status",
+        }
 
     if operation == "from_images":
         if not image_paths:
@@ -285,7 +329,11 @@ async def splat_generate(
         job = Job(id=jid, kind="from_images", status="queued", created_at=time.time())
         _jobs[jid] = job
         asyncio.create_task(_run_job(job, backend.generate_from_images(image_paths, jid)))
-        return {"job_id": jid, "status": job.status, "message": "pipeline started in background, poll with status"}
+        return {
+            "job_id": jid,
+            "status": job.status,
+            "message": "pipeline started in background, poll with status",
+        }
 
     if operation == "status":
         if not job_id or job_id not in _jobs:
@@ -294,7 +342,9 @@ async def splat_generate(
         return {"job_id": j.id, "status": j.status, "message": j.message}
 
     if operation == "list":
-        return {"jobs": [{"job_id": j.id, "status": j.status, "kind": j.kind} for j in _jobs.values()]}
+        return {
+            "jobs": [{"job_id": j.id, "status": j.status, "kind": j.kind} for j in _jobs.values()]
+        }
 
     if operation == "get_asset":
         if not job_id or job_id not in _jobs:
@@ -332,6 +382,7 @@ async def splat_engine_status(ctx: Context) -> dict:
 # Fleet contract: health + registration (per ORCHESTRATION_HIERARCHY.md)
 # ---------------------------------------------------------------------------
 
+
 async def _register_with_hub() -> None:
     payload = {
         "id": SERVER_ID,
@@ -341,7 +392,7 @@ async def _register_with_hub() -> None:
         "version": SERVER_VERSION,
         "tier": "standard",
     }
-    for attempt in range(1):  # non-fatal, single attempt at startup; retry loop is a fast-follow
+    for _attempt in range(1):  # non-fatal, single attempt at startup; retry loop is a fast-follow
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(HUB_REGISTER_URL, json=payload)
@@ -378,6 +429,7 @@ def health_payload() -> dict:
 # every server needs one shutdown implementation shared by both the REST
 # endpoint and the MCP tool - never two independently-drifting code paths.
 # ---------------------------------------------------------------------------
+
 
 async def _do_shutdown(delay_seconds: float = 0.5) -> None:
     """Schedule a graceful exit after `delay_seconds`, giving the caller
