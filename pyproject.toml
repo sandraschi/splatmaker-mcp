@@ -58,6 +58,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP"]
+ignore = ["E501"]
 [tool.uv]
 # nerfstudio's dependency tree pulls in newrawpy, which only has pre-release
 # versions satisfying nerfstudio's constraint as of 2026-07-13 - found this
