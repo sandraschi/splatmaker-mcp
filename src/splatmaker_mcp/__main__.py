@@ -1,4 +1,4 @@
-"""Entry point — dual transport per fleet standard: stdio (default, for
+"""Entry point - dual transport per fleet standard: stdio (default, for
 Claude Desktop / Cursor) or streamable HTTP on /mcp (for the webapp + hub).
 """
 
