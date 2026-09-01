@@ -25,4 +25,6 @@ Write-Host "[splatmaker-mcp] Syncing dependencies..." -ForegroundColor Cyan
 uv sync
 
 Write-Host "[splatmaker-mcp] Starting HTTP transport on port 11091..." -ForegroundColor Green
+# Fleet depot advertise — let depot-mcp know where this repo's depot lives
+try { & "D:\Dev\repos\mcp-central-docs\scripts\advertise-depot.ps1" -DepotMcpUrl "http://127.0.0.1:10727" } catch {}
 uv run splatmaker-mcp --http --port 11091
