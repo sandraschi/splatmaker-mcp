@@ -13,6 +13,7 @@ from starlette.responses import JSONResponse
 from splatmaker_mcp.server import (
     BACKEND_PORT,
     _do_shutdown,
+    _jobs,
     _register_with_hub,
     health_payload,
     mcp,
@@ -23,6 +24,23 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 async def _health(request):  # noqa: ANN001 - Starlette handler signature
     return JSONResponse(health_payload())
+
+
+async def _jobs_list(request):  # noqa: ANN001
+    return JSONResponse(
+        {
+            "jobs": [
+                {
+                    "job_id": j.id,
+                    "kind": j.kind,
+                    "status": j.status,
+                    "created_at": j.created_at,
+                    "message": j.message,
+                }
+                for j in _jobs.values()
+            ]
+        }
+    )
 
 
 async def _shutdown(request):  # noqa: ANN001 - Starlette handler signature
@@ -44,6 +62,7 @@ def build_http_app():
     """
     starlette_app = mcp.http_app(path="/mcp")
     starlette_app.add_route("/api/health", _health)
+    starlette_app.add_route("/api/jobs", _jobs_list)
     starlette_app.add_route("/api/shutdown", _shutdown, methods=["POST"])
     return starlette_app
 

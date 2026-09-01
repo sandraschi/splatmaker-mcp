@@ -68,11 +68,20 @@ async def test_generate_from_video_requires_path():
 
 
 @pytest.mark.asyncio
-async def test_generate_from_images_rejects_multi_directory_input(monkeypatch):
-    monkeypatch.setattr(backend, "is_configured", lambda: True)
-    result = await backend.generate_from_images(["/tmp/a/1.jpg", "/tmp/b/2.jpg"], "test-job-2")
-    assert result.ok is False
-    assert "multiple directories" in result.message
+async def test_generate_from_images_stages_multi_directory_input(monkeypatch, tmp_path):
+    # Fast win 2026-09-01: mixed-source now stages via temp dir instead of returning not_implemented
+    d1 = tmp_path / "a"; d2 = tmp_path / "b"; d1.mkdir(); d2.mkdir()
+    f1 = d1 / "1.jpg"; f2 = d2 / "2.jpg"; f1.write_bytes(b"fake"); f2.write_bytes(b"fake")
+    called = {}
+    async def fake_pipeline(kind, input_path, job_id):
+        called["path"] = input_path
+        from splatmaker_mcp.server import EngineResult
+        return EngineResult(ok=True, message="staged", asset_paths={"input": input_path})
+    monkeypatch.setattr(backend, "_pipeline", fake_pipeline)
+    result = await backend.generate_from_images([str(f1), str(f2)], "test-job-2")
+    assert result.ok is True
+    assert "input" in result.asset_paths
+    assert called["path"] not in [str(d1), str(d2)]
 
 
 @pytest.mark.asyncio

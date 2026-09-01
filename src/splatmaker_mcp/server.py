@@ -1,4 +1,4 @@
-"""splatmaker-mcp — self-hosted Gaussian-splat generation via Nerfstudio/Splatfacto.
+"""splatmaker-mcp - self-hosted Gaussian-splat generation via Nerfstudio/Splatfacto.
 
 ENGINE DECIDED 2026-07-13: Nerfstudio (gsplat as its rasterization backend).
 Postshot was scratched (paid CLI behind a free download). Bare gsplat was
@@ -18,9 +18,12 @@ without that extra will correctly report not_implemented via is_configured().
 from __future__ import annotations
 
 import asyncio
+import json as _json
 import logging
 import shutil
+import sqlite3 as _sqlite
 import sys
+import tempfile as _tempfile
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -46,7 +49,7 @@ _start_time = time.monotonic()
 
 
 # ---------------------------------------------------------------------------
-# Engine abstraction — pluggable, honestly not-yet-wired (see module docstring)
+# Engine abstraction - pluggable, honestly not-yet-wired (see module docstring)
 # ---------------------------------------------------------------------------
 
 
@@ -220,25 +223,24 @@ class SplatBackend:
         return await self._pipeline("video", video_path, job_id)
 
     async def generate_from_images(self, image_paths: list[str], job_id: str) -> EngineResult:
-        # ns-process-data images wants a directory, not a file list - if
-        # given individual paths, use their common parent as the input dir
-        # (honest limitation: assumes they're already colocated; mixed-source
-        # image lists need staging into a temp dir first - not yet handled,
-        # will raise clearly rather than silently doing the wrong thing).
+        # ns-process-data images wants a directory, not a file list
         if not image_paths:
             return EngineResult(ok=False, message="image_paths is empty")
         parents = {str(Path(p).parent) for p in image_paths}
-        if len(parents) != 1:
-            return EngineResult(
-                ok=False,
-                message=(
-                    "not_implemented: image_paths span multiple directories "
-                    f"({parents}) - staging mixed-source images into a temp dir isn't "
-                    "built yet. Put all images in one directory and pass that as a single "
-                    "path, or use from_video for a single capture."
-                ),
-            )
-        return await self._pipeline("images", next(iter(parents)), job_id)
+        if len(parents) == 1:
+            return await self._pipeline("images", next(iter(parents)), job_id)
+        # Fast win 2026-09-01: mixed-source staging — copy scattered images into a temp dir
+        staging = Path(_tempfile.mkdtemp(prefix=f"splatmaker-{job_id}-"))
+        try:
+            for src in image_paths:
+                src_p = Path(src)
+                if not src_p.exists():
+                    return EngineResult(ok=False, message=f"image not found: {src}")
+                shutil.copy2(src_p, staging / src_p.name)
+            logger.info("staged %d images from %s into %s", len(image_paths), parents, staging)
+            return await self._pipeline("images", str(staging), job_id)
+        except Exception as exc:
+            return EngineResult(ok=False, message=f"staging failed: {exc}")
 
 
 backend = SplatBackend(
@@ -247,9 +249,68 @@ backend = SplatBackend(
 
 
 # ---------------------------------------------------------------------------
-# Job tracking (in-memory for v1 — SQLite persistence is a fast-follow, not
-# a v1 requirement; flagged here rather than silently deferred)
+# Job tracking — SQLite-backed (fast win 2026-09-01), in-memory dict is cache
 # ---------------------------------------------------------------------------
+
+_DB_PATH = Path.home() / ".splatmaker-mcp" / "jobs.db"
+_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _db() -> _sqlite.Connection:
+    con = _sqlite.connect(str(_DB_PATH))
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, kind TEXT, status TEXT, created_at REAL, message TEXT, asset_paths TEXT)"
+    )
+    return con
+
+
+def _load_jobs() -> dict[str, Job]:
+    try:
+        con = _db()
+        rows = con.execute(
+            "SELECT id, kind, status, created_at, message, asset_paths FROM jobs"
+        ).fetchall()
+        con.close()
+        out: dict[str, Job] = {}
+        for jid, kind, status, created_at, message, asset_json in rows:
+            try:
+                ap = _json.loads(asset_json) if asset_json else {}
+            except Exception:
+                ap = {}
+            out[jid] = Job(
+                id=jid,
+                kind=kind,
+                status=status,
+                created_at=created_at,
+                message=message or "",
+                asset_paths=ap,
+            )
+        if out:
+            logger.info("loaded %d jobs from %s", len(out), _DB_PATH)
+        return out
+    except Exception as exc:
+        logger.warning("job load failed: %s", exc)
+        return {}
+
+
+def _save_job(job: Job) -> None:
+    try:
+        con = _db()
+        con.execute(
+            "INSERT OR REPLACE INTO jobs (id, kind, status, created_at, message, asset_paths) VALUES (?,?,?,?,?,?)",
+            (
+                job.id,
+                job.kind,
+                job.status,
+                job.created_at,
+                job.message,
+                _json.dumps(job.asset_paths),
+            ),
+        )
+        con.commit()
+        con.close()
+    except Exception as exc:
+        logger.warning("job save failed for %s: %s", job.id, exc)
 
 
 @dataclass
@@ -262,11 +323,11 @@ class Job:
     asset_paths: dict[str, str] = field(default_factory=dict)
 
 
-_jobs: dict[str, Job] = {}
+_jobs: dict[str, Job] = _load_jobs()
 
 
 # ---------------------------------------------------------------------------
-# MCP tool — portmanteau pattern per fleet TOOL_DESIGN_STANDARDS
+# MCP tool - portmanteau pattern per fleet TOOL_DESIGN_STANDARDS
 # ---------------------------------------------------------------------------
 
 
@@ -276,15 +337,18 @@ async def _run_job(job: Job, coro) -> None:
     training runs take real minutes; a tool call that blocks on that would
     hit most MCP clients' request timeouts long before completion."""
     job.status = "running"
+    _save_job(job)
     try:
         result = await coro
         job.status = "done" if result.ok else "failed"
         job.message = result.message
         job.asset_paths = result.asset_paths
+        _save_job(job)
     except Exception as exc:  # noqa: BLE001 - job-level catch-all, must not crash the server
         job.status = "failed"
         job.message = f"unhandled exception: {exc}"
         logger.exception("splatmaker job %s crashed", job.id)
+        _save_job(job)
 
 
 @mcp.tool()
@@ -298,11 +362,11 @@ async def splat_generate(
     """Generate or inspect a Gaussian-splat world from local media.
 
     Operations:
-        from_video    — start a job from a video file (video_path required)
-        from_images   — start a job from a set of images (image_paths required)
-        status        — check a job's status (job_id required)
-        list          — list all known jobs
-        get_asset     — return asset paths for a completed job (job_id required)
+        from_video    - start a job from a video file (video_path required)
+        from_images   - start a job from a set of images (image_paths required)
+        status        - check a job's status (job_id required)
+        list          - list all known jobs
+        get_asset     - return asset paths for a completed job (job_id required)
 
     from_video/from_images return IMMEDIATELY with status="running" - the
     real ns-process-data -> ns-train -> ns-export pipeline runs as a
@@ -315,6 +379,7 @@ async def splat_generate(
         jid = str(uuid.uuid4())
         job = Job(id=jid, kind="from_video", status="queued", created_at=time.time())
         _jobs[jid] = job
+        _save_job(job)
         asyncio.create_task(_run_job(job, backend.generate_from_video(video_path, jid)))
         return {
             "job_id": jid,
@@ -328,6 +393,7 @@ async def splat_generate(
         jid = str(uuid.uuid4())
         job = Job(id=jid, kind="from_images", status="queued", created_at=time.time())
         _jobs[jid] = job
+        _save_job(job)
         asyncio.create_task(_run_job(job, backend.generate_from_images(image_paths, jid)))
         return {
             "job_id": jid,

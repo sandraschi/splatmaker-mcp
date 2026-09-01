@@ -31,7 +31,7 @@ export default function App() {
       <header className="flex items-center gap-3 mb-8">
         <Radio className="text-amber-500" size={28} />
         <h1 className="text-2xl font-bold">splatmaker-mcp</h1>
-        <span className="text-zinc-500 text-sm">v0.1.0 &mdash; scaffold</span>
+        <span className="text-zinc-500 text-sm">v0.2.0 — Nerfstudio/Splatfacto wired</span>
       </header>
 
       {error && (
