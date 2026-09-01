@@ -13,3 +13,6 @@ webapp/node_modules/
 boot.log
 boot_err.log
 *.log
+
+# webapp pack artifact
+webapp/*.tgz
