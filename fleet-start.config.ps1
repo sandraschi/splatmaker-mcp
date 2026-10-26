@@ -4,12 +4,14 @@
     Name         = 'splatmaker-mcp'
     BackendPort  = 11091
     FrontendPort = 11092
-    HealthPath   = '/health'
+    HealthPath   = '/api/health'
     WebRoot      = 'webapp'
     Backend = @{
-        Kind = 'none'
+        Kind    = 'custom'
+        Command = "uv run --no-sync --project '$PSScriptRoot' splatmaker-mcp --http --port 11091"
     }
     Frontend = @{
-        Kind = 'none'
+        Kind           = 'vite-npm'
+        PackageManager = 'npm'
     }
 }
