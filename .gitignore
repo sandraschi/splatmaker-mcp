@@ -14,5 +14,11 @@ boot.log
 boot_err.log
 *.log
 
+# assess + packaging artifacts (regenerable, never commit)
+/reports/
+*.mcpb
+native/target/
+native/gen/
+
 # webapp pack artifact
 webapp/*.tgz

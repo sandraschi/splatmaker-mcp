@@ -17,6 +17,10 @@ run-stdio:
 run-http:
     uv run splatmaker-mcp --http --port 11091
 
+# Fleet serve: run the HTTP backend (what start.ps1 launches)
+serve:
+    uv run splatmaker-mcp --http --port 11091
+
 lint:
     uv run --extra dev ruff check src tests
 

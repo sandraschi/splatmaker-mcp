@@ -2,7 +2,20 @@
 
 Self-hosted, zero-marginal-cost Gaussian-splat generation. FOSS alternative to worldlabs-mcp's Marble API - point at a video or images, get a navigable 3D Gaussian-splat world, runs entirely on local GPU.
 
-Status: scaffold (v0.1.0). Server shell, tools, and job tracking are real; the splat-generation engine itself is not yet wired - see README "Engine status". Tools respond honestly with not_implemented rather than faking success.
+Status: v0.2.0, Nerfstudio/Splatfacto engine implemented. Server shell, tools, job tracking (SQLite), fleet health/registration contract, webapp skeleton, and the real subprocess pipeline are working. No full end-to-end training run against real capture data yet (needs Sandra's own photos/video).
+
+Full reference: llms-full.txt
+
+## Tools
+
+- splat_generate(operation, video_path?, image_paths?, job_id?) - generate or inspect splat jobs. operation in [from_video, from_images, status, list, get_asset]. All returns carry success + message.
+- splat_engine_status() - reports which FOSS engine (if any) is configured
+- server_shutdown() - graceful shutdown (matches POST /api/shutdown)
+
+## REST (backend :11091)
+
+- GET /api/health, GET /api/status, GET /api/capabilities, GET /api/jobs, POST /api/jobs/status, POST /api/shutdown
+- Webapp on :11092 proxies /api + /mcp same-origin; absolute backend URL only inside Tauri.
 
 ## Tools
 

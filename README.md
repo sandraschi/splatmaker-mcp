@@ -64,6 +64,11 @@ Unlike worldlabs-mcp (which returns `assets.mesh.collider_mesh_url` alongside ev
 
 - `splat_generate` (portmanteau) — ops: `from_video`, `from_images`, `status`, `list`, `get_asset`
 - `splat_engine_status` — reports which engine is configured
+- `server_shutdown` — graceful shutdown (matches `POST /api/shutdown`)
+
+REST (backend :11091): `GET /api/health`, `GET /api/status`, `GET /api/capabilities`,
+`GET /api/jobs`, `POST /api/jobs/status`, `POST /api/shutdown`.
+Full reference: `llms-full.txt`. All tool returns carry `success` + `message`.
 
 ## Ports
 

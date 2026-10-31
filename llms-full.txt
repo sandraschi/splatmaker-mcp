@@ -6,9 +6,9 @@ Self-hosted, zero-marginal-cost Gaussian-splat generation, wrapping one of sever
 
 ## Status honesty
 
-This is a v0.1.0 scaffold. What is real: the FastMCP 3.2+ server, dual transport (stdio for Claude Desktop/Cursor, streamable HTTP on /mcp for the webapp and fleet hub), the splat_generate portmanteau tool's full schema and job-tracking logic, the splat_engine_status introspection tool, the /api/health endpoint and mcp-federation-hub registration call per ORCHESTRATION_HIERARCHY.md's fleet contract, and a passing test suite (6 tests) that verifies the honest not_implemented behavior rather than a fake success path.
+This is v0.2.0. What is real: the FastMCP 3.2+ server, dual transport (stdio for Claude Desktop/Cursor, streamable HTTP on /mcp for the webapp and fleet hub), the splat_generate portmanteau tool's full schema and SQLite-backed job tracking, the splat_engine_status introspection tool, the server_shutdown tool (matches POST /api/shutdown), the /api/health, /api/status, /api/capabilities, /api/jobs endpoints plus POST /api/jobs/status, the webapp (Dashboard, Generate, Jobs), CORS per fleet standard with a same-origin webapp, and a passing test suite (8 tests).
 
-What is not yet real: the actual splat-generation engine. generate_from_video and generate_from_images will return status=not_implemented until an engine is chosen and its SplatBackend subclass is written in server.py. No SQLite persistence yet (jobs are in-memory, lost on restart). No webapp built yet (ports reserved: 11091 backend, 11092 frontend). No MCPB bundle. No glama.json health data beyond a stub.
+What is not yet real: a full end-to-end training run against real capture data (needs Sandra's own photos/video of a real space - Nerfstudio's demo datasets are blocked by an external Google permission issue). No MCPB bundle yet. No Chat/Skills/Help/Logs webapp pages yet.
 
 ## Tool reference
 
@@ -23,7 +23,22 @@ Portmanteau tool. operation is one of:
 
 ### splat_engine_status()
 
-No arguments. Returns {engine, configured, note} describing which engine (if any) is set via the SPLATMAKER_ENGINE environment variable, and whether a real implementation exists for it (currently: no, for any value).
+No arguments. Returns {success, engine, configured, max_iterations, note, message} describing which engine (if any) is set and whether the real nerfstudio CLI is present (`uv sync --extra engine`).
+
+### server_shutdown()
+
+No arguments. Returns {success, status, message}. Matches POST /api/shutdown - both call the same underlying implementation (exit ~0.5s after responding).
+
+## REST endpoints (backend :11091)
+
+- GET /api/health - liveness probe {status, server, version, uptime_seconds, engine_configured}
+- GET /api/status - richer status (tool_count, tools, job_count, jobs_by_status)
+- GET /api/capabilities - tool catalog + REST route list + ports
+- GET /api/jobs - all jobs with kind/status/message
+- POST /api/jobs/status {job_id} - one job's status/message
+- POST /api/shutdown - orderly exit (200 immediately, process exits ~500ms later)
+
+CORS: explicit origins (dev frontend :11092, Tauri schemes) + LAN/Tailscale regex. Webapp uses same-origin /api via the vite proxy; absolute backend URL only inside Tauri.
 
 ## Critical downstream integration note: no collision mesh
 
