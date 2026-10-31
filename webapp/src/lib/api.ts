@@ -1,4 +1,17 @@
-export const API_BASE = "http://127.0.0.1:11091";
+// Same-origin by default (vite proxy forwards /api and /mcp to :11091).
+// Absolute backend URL ONLY inside the Tauri WebView, where same-origin is
+// the app bundle itself. A hardcoded absolute URL in a real browser tab breaks
+// on any non-localhost hostname (LAN name, Tailscale MagicDNS, goliath).
+declare global {
+  interface Window {
+    __TAURI__?: unknown;
+    __TAURI_INTERNALS__?: unknown;
+  }
+}
+const IN_TAURI =
+  typeof window !== "undefined" &&
+  ("__TAURI__" in window || "__TAURI_INTERNALS__" in window);
+export const API_BASE = IN_TAURI ? "http://127.0.0.1:11091" : "";
 
 export interface Health {
   status: string;
