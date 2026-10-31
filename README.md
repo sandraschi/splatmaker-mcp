@@ -72,10 +72,20 @@ Full reference: `llms-full.txt`. All tool returns carry `success` + `message`.
 
 ## Ports
 
-- Backend (FastMCP HTTP `/mcp` + `/api/health`): **11091**
+- Backend (FastMCP HTTP `/mcp` + Starlette REST `/api/*`): **11091**
 - Frontend (Vite React dashboard): **11092**
 
 Registered in `mcp-central-docs/operations/WEBAPP_PORTS.md`.
+
+## Stack
+
+- Backend: Python 3.12, FastMCP 3.x, Starlette, uvicorn, SQLite (job store)
+- Frontend: React 18, Vite 5, TailwindCSS 3, Zustand, react-router-dom
+- Native shell: Tauri 2 (NSIS target)
+
+Sub-documents: `INSTALL.md`, `CHANGELOG.md`, `llms-full.txt`,
+`docs/CONFIGURATION.md`, `docs/DEVELOPMENT.md`, `docs/TOOLS.md`,
+`docs/TROUBLESHOOTING.md`, `docs/ONBOARDING.md`.
 
 ## Quick start
 

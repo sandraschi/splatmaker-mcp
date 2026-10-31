@@ -94,8 +94,31 @@ async def _capabilities(request):  # noqa: ANN001 - Starlette handler signature
                     "description": "Gracefully shut down this server.",
                 },
             ],
-            "rest": ["/api/health", "/api/status", "/api/capabilities", "/api/jobs"],
+            "rest": [
+                "/api/health",
+                "/api/status",
+                "/api/capabilities",
+                "/api/jobs",
+                "/api/v1/diagnostics",
+            ],
             "ports": {"backend": BACKEND_PORT},
+        }
+    )
+
+
+async def _diagnostics(request):  # noqa: ANN001 - Starlette handler signature
+    import platform
+
+    h = health_payload()
+    return JSONResponse(
+        {
+            "server": SERVER_ID,
+            "version": SERVER_VERSION,
+            "tools": ["splat_generate", "splat_engine_status", "server_shutdown"],
+            "system": {"python": platform.python_version(), "platform": platform.platform()},
+            "engine_configured": h["engine_configured"],
+            "job_count": len(_jobs),
+            "errors": [],
         }
     )
 
@@ -148,6 +171,7 @@ def build_http_app():
     starlette_app.add_route("/api/capabilities", _capabilities)
     starlette_app.add_route("/api/jobs", _jobs_list)
     starlette_app.add_route("/api/jobs/status", _job_status, methods=["POST"])
+    starlette_app.add_route("/api/v1/diagnostics", _diagnostics)
     starlette_app.add_route("/api/shutdown", _shutdown, methods=["POST"])
     return starlette_app
 
