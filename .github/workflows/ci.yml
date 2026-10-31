@@ -1,0 +1,30 @@
+# splatmaker-mcp — GitHub Actions CI (Windows, lightweight)
+
+name: ci
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  python:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+      - run: uv run --extra dev ruff check src tests
+      - run: uv run --extra dev ruff format src tests --check
+      - run: uv run --extra dev pytest tests/ -q
+
+  webapp:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: webapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun x tsc --noEmit -p .
