@@ -22,6 +22,11 @@ All returns carry `success` + `message`; failures also carry `error`.
 
 `{success, status: "shutting_down", message}`. Same implementation as `POST /api/shutdown`.
 
+## Prompt + resource
+
+- Prompt `splat_workflow` — guided capture → generate → poll → fetch → collider-mesh briefing.
+- Resource `splatmaker://jobs` — live job ledger JSON (same rows as `GET /api/jobs`).
+
 ## REST (backend :11091)
 
 | Method + path | Purpose |

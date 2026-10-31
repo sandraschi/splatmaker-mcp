@@ -1,0 +1,33 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"suspicious": {
+				"noConsole": "error",
+				"noDebugger": "error"
+			}
+		}
+	},
+	"formatter": {
+		"enabled": true
+	},
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.css"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        }
+      }
+    }
+  ]
+}

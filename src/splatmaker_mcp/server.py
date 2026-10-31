@@ -33,6 +33,7 @@ from typing import Literal
 
 import httpx
 from fastmcp import Context, FastMCP
+from fastmcp.tools.tool import ToolAnnotations
 
 logger = logging.getLogger("splatmaker_mcp")
 
@@ -351,7 +352,14 @@ async def _run_job(job: Job, coro) -> None:
         _save_job(job)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=ToolAnnotations(
+        read_only_hint=False,
+        destructive_hint=False,
+        idempotent_hint=False,
+        open_world_hint=False,
+    )
+)
 async def splat_generate(
     ctx: Context,
     operation: Literal["from_video", "from_images", "status", "list", "get_asset"],
@@ -466,7 +474,9 @@ async def splat_generate(
     }
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
+)
 async def splat_engine_status(ctx: Context) -> dict:
     """Report which splat engine is configured and whether the real CLI
     tools are actually present (requires `uv sync --extra engine`).
@@ -570,7 +580,11 @@ async def _do_shutdown(delay_seconds: float = 0.5) -> None:
     asyncio.create_task(_exit_after_delay())
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations=ToolAnnotations(
+        read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=False
+    )
+)
 async def server_shutdown(ctx: Context) -> dict:
     """Gracefully shut down this server. Matches the REST /api/shutdown
     endpoint - both call the same underlying implementation.
@@ -584,3 +598,48 @@ async def server_shutdown(ctx: Context) -> dict:
     """
     await _do_shutdown()
     return {"success": True, "status": "shutting_down", "message": "Server will exit in ~0.5s"}
+
+
+@mcp.prompt()
+def splat_workflow() -> str:
+    """Guided prompt: capture -> generate -> poll -> collider mesh.
+
+    ## Return Format
+    A plain-text workflow briefing the caller pastes into the session.
+
+    ## Examples
+    `splat_workflow` -> multi-step instructions for a from_video job.
+    """
+    return (
+        "Splatmaker workflow: (1) capture - one folder of sharp, overlapping phone "
+        "photos (or a slow walk-around video); (2) generate - call splat_generate "
+        "from_video/from_images, it returns immediately with a job_id; (3) poll - "
+        "splat_generate status until done (real training takes minutes); (4) fetch - "
+        "get_asset for the .ply path; (5) collide - route the .ply through "
+        "blender-mcp blender_splatting for a collision mesh before any VR use "
+        "(this server never emits a collider)."
+    )
+
+
+@mcp.resource("splatmaker://jobs")
+def jobs_resource() -> str:
+    """Live job ledger (same rows as GET /api/jobs).
+
+    ## Return Format
+    JSON array of {job_id, kind, status, created_at, message}.
+
+    ## Examples
+    Read `splatmaker://jobs` -> current ledger without calling list.
+    """
+    return _json.dumps(
+        [
+            {
+                "job_id": j.id,
+                "kind": j.kind,
+                "status": j.status,
+                "created_at": j.created_at,
+                "message": j.message,
+            }
+            for j in _jobs.values()
+        ]
+    )
