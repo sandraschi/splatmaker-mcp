@@ -183,5 +183,3 @@ fn watch_backend_stream<R: std::io::Read + Send + 'static>(stream: R, app: AppHa
         }
     }
 }
-
-
