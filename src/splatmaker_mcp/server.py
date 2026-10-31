@@ -288,8 +288,8 @@ def _load_jobs() -> dict[str, Job]:
         if out:
             logger.info("loaded %d jobs from %s", len(out), _DB_PATH)
         return out
-    except Exception as exc:
-        logger.warning("job load failed: %s", exc)
+    except Exception:
+        logger.exception("job load failed")
         return {}
 
 
@@ -309,8 +309,8 @@ def _save_job(job: Job) -> None:
         )
         con.commit()
         con.close()
-    except Exception as exc:
-        logger.warning("job save failed for %s: %s", job.id, exc)
+    except Exception:
+        logger.exception("job save failed for %s", job.id)
 
 
 @dataclass
@@ -372,16 +372,35 @@ async def splat_generate(
     real ns-process-data -> ns-train -> ns-export pipeline runs as a
     background task (real training takes real minutes, not seconds). Poll
     with operation="status" until status is "done" or "failed".
+
+    ## Return Format
+    Always a dict with a `success` bool and a human-readable `message`.
+    Success paths also carry the documented payload keys (`job_id`, `status`,
+    `jobs`, `asset_paths`). Error paths carry `success: False` plus an `error`
+    key with the machine-readable reason; the `error` key is kept for backward
+    compatibility with existing clients.
+
+    ## Examples
+    `splat_generate(operation="from_video", video_path="D:/cap/walk.mp4")`
+    -> `{"success": True, "job_id": "...", "status": "queued", "message": ...}`
+    `splat_generate(operation="status", job_id="<id>")`
+    -> `{"success": True, "job_id": "<id>", "status": "running", "message": ...}`
+    `splat_generate(operation="list")` -> `{"success": True, "jobs": [...], ...}`
     """
     if operation == "from_video":
         if not video_path:
-            return {"error": "video_path is required for operation=from_video"}
+            return {
+                "success": False,
+                "error": "video_path is required for operation=from_video",
+                "message": "video_path is required for operation=from_video",
+            }
         jid = str(uuid.uuid4())
         job = Job(id=jid, kind="from_video", status="queued", created_at=time.time())
         _jobs[jid] = job
         _save_job(job)
         asyncio.create_task(_run_job(job, backend.generate_from_video(video_path, jid)))
         return {
+            "success": True,
             "job_id": jid,
             "status": job.status,
             "message": "pipeline started in background, poll with status",
@@ -389,13 +408,18 @@ async def splat_generate(
 
     if operation == "from_images":
         if not image_paths:
-            return {"error": "image_paths is required for operation=from_images"}
+            return {
+                "success": False,
+                "error": "image_paths is required for operation=from_images",
+                "message": "image_paths is required for operation=from_images",
+            }
         jid = str(uuid.uuid4())
         job = Job(id=jid, kind="from_images", status="queued", created_at=time.time())
         _jobs[jid] = job
         _save_job(job)
         asyncio.create_task(_run_job(job, backend.generate_from_images(image_paths, jid)))
         return {
+            "success": True,
             "job_id": jid,
             "status": job.status,
             "message": "pipeline started in background, poll with status",
@@ -403,44 +427,76 @@ async def splat_generate(
 
     if operation == "status":
         if not job_id or job_id not in _jobs:
-            return {"error": f"unknown job_id: {job_id!r}"}
+            return {
+                "success": False,
+                "error": f"unknown job_id: {job_id!r}",
+                "message": f"unknown job_id: {job_id!r}",
+            }
         j = _jobs[job_id]
-        return {"job_id": j.id, "status": j.status, "message": j.message}
+        return {"success": True, "job_id": j.id, "status": j.status, "message": j.message}
 
     if operation == "list":
+        jobs = [{"job_id": j.id, "status": j.status, "kind": j.kind} for j in _jobs.values()]
         return {
-            "jobs": [{"job_id": j.id, "status": j.status, "kind": j.kind} for j in _jobs.values()]
+            "success": True,
+            "jobs": jobs,
+            "message": f"{len(jobs)} job(s) tracked",
         }
 
     if operation == "get_asset":
         if not job_id or job_id not in _jobs:
-            return {"error": f"unknown job_id: {job_id!r}"}
+            return {
+                "success": False,
+                "error": f"unknown job_id: {job_id!r}",
+                "message": f"unknown job_id: {job_id!r}",
+            }
         j = _jobs[job_id]
         if j.status != "done":
-            return {"error": f"job {job_id} is not done (status={j.status})"}
-        return {"job_id": j.id, "asset_paths": j.asset_paths}
+            return {
+                "success": False,
+                "error": f"job {job_id} is not done (status={j.status})",
+                "message": f"job {job_id} is not done (status={j.status})",
+            }
+        return {"success": True, "job_id": j.id, "asset_paths": j.asset_paths, "message": "done"}
 
-    return {"error": f"unknown operation: {operation!r}"}
+    return {
+        "success": False,
+        "error": f"unknown operation: {operation!r}",
+        "message": f"unknown operation: {operation!r}",
+    }
 
 
 @mcp.tool()
 async def splat_engine_status(ctx: Context) -> dict:
     """Report which splat engine is configured and whether the real CLI
-    tools are actually present (requires `uv sync --extra engine`)."""
+    tools are actually present (requires `uv sync --extra engine`).
+
+    ## Return Format
+    `{"success": True, "engine": str, "configured": bool,
+    "max_iterations": int, "note": str, "message": str}` — `message` mirrors
+    `note` so fleet tooling can render the result without special-casing it.
+
+    ## Examples
+    `splat_engine_status()` -> `{"success": True, "engine": "nerfstudio",
+    "configured": True, "max_iterations": 15000, "note": ..., "message": ...}`
+    """
     configured = backend.is_configured()
+    note = (
+        "nerfstudio CLI not found on PATH or next to the venv's python - "
+        "run `uv sync --extra engine` (real, sizeable install: torch+CUDA, "
+        "nerfstudio, and gsplat - ~276 packages, verified working on Goliath "
+        "2026-07-13 with an RTX 4090)."
+        if not configured
+        else "nerfstudio CLI verified present; real ns-process-data/ns-train/ns-export "
+        "pipeline wired and ready."
+    )
     return {
+        "success": True,
         "engine": backend.engine.value,
         "configured": configured,
         "max_iterations": backend.max_iterations,
-        "note": (
-            "nerfstudio CLI not found on PATH or next to the venv's python - "
-            "run `uv sync --extra engine` (real, sizeable install: torch+CUDA, "
-            "nerfstudio, gsplat - ~276 packages, verified working on Goliath "
-            "2026-07-13 with an RTX 4090)."
-            if not configured
-            else "nerfstudio CLI verified present; real ns-process-data/ns-train/ns-export "
-            "pipeline wired and ready."
-        ),
+        "note": note,
+        "message": note,
     }
 
 
@@ -476,8 +532,8 @@ async def _register_with_hub() -> None:
                         resp.status_code,
                     )
                 return
-        except Exception as exc:  # noqa: BLE001 - intentionally broad, non-fatal per hub contract
-            logger.warning("Hub registration failed (non-fatal, hub may not be running): %s", exc)
+        except Exception:  # noqa: BLE001 - intentionally broad, non-fatal per hub contract
+            logger.exception("Hub registration failed (non-fatal, hub may not be running)")
 
 
 def health_payload() -> dict:
@@ -517,6 +573,14 @@ async def _do_shutdown(delay_seconds: float = 0.5) -> None:
 @mcp.tool()
 async def server_shutdown(ctx: Context) -> dict:
     """Gracefully shut down this server. Matches the REST /api/shutdown
-    endpoint - both call the same underlying implementation."""
+    endpoint - both call the same underlying implementation.
+
+    ## Return Format
+    `{"success": True, "status": "shutting_down", "message": str}`.
+
+    ## Examples
+    `server_shutdown()` -> `{"success": True, "status": "shutting_down",
+    "message": "Server will exit in ~0.5s"}`
+    """
     await _do_shutdown()
-    return {"status": "shutting_down", "message": "Server will exit in ~0.5s"}
+    return {"success": True, "status": "shutting_down", "message": "Server will exit in ~0.5s"}

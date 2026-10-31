@@ -8,10 +8,14 @@ import argparse
 import asyncio
 import logging
 
+from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from splatmaker_mcp.server import (
     BACKEND_PORT,
+    SERVER_ID,
+    SERVER_VERSION,
     _do_shutdown,
     _jobs,
     _register_with_hub,
@@ -48,6 +52,68 @@ async def _shutdown(request):  # noqa: ANN001 - Starlette handler signature
     return JSONResponse({"status": "shutting_down", "message": "Server will exit in ~0.5s"})
 
 
+async def _status(request):  # noqa: ANN001 - Starlette handler signature
+    h = health_payload()
+    return JSONResponse(
+        {
+            "server": h["server"],
+            "version": h["version"],
+            "status": h["status"],
+            "uptime_seconds": h["uptime_seconds"],
+            "engine_configured": h["engine_configured"],
+            "tool_count": 3,
+            "tools": ["splat_generate", "splat_engine_status", "server_shutdown"],
+            "job_count": len(_jobs),
+            "jobs_by_status": {
+                s: sum(1 for j in _jobs.values() if j.status == s)
+                for s in ("queued", "running", "done", "failed")
+            },
+        }
+    )
+
+
+async def _capabilities(request):  # noqa: ANN001 - Starlette handler signature
+    return JSONResponse(
+        {
+            "server": SERVER_ID,
+            "version": SERVER_VERSION,
+            "tools": [
+                {
+                    "name": "splat_generate",
+                    "operations": ["from_video", "from_images", "status", "list", "get_asset"],
+                    "description": "Generate or inspect a Gaussian-splat world from local media.",
+                },
+                {
+                    "name": "splat_engine_status",
+                    "operations": [],
+                    "description": "Report which splat engine is configured and whether its CLI is present.",
+                },
+                {
+                    "name": "server_shutdown",
+                    "operations": [],
+                    "description": "Gracefully shut down this server.",
+                },
+            ],
+            "rest": ["/api/health", "/api/status", "/api/capabilities", "/api/jobs"],
+            "ports": {"backend": BACKEND_PORT},
+        }
+    )
+
+
+async def _job_status(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            {"error": 'invalid JSON body, expected {"job_id": ...}'}, status_code=400
+        )
+    job_id = body.get("job_id") if isinstance(body, dict) else None
+    job = _jobs.get(job_id) if job_id else None
+    if job is None:
+        return JSONResponse({"error": f"unknown job_id: {job_id!r}"}, status_code=404)
+    return JSONResponse({"job_id": job.id, "status": job.status, "message": job.message})
+
+
 def build_http_app():
     """Starlette app: /api/health (fleet contract) + FastMCP's own /mcp mount.
     Starlette chosen per STARLETTE_NO_PYDANTIC_STANDARD - this server's REST
@@ -61,8 +127,27 @@ def build_http_app():
     404s despite the route object existing in the returned list).
     """
     starlette_app = mcp.http_app(path="/mcp")
+    # Fleet CORS standard: explicit origins + unconditional regex for
+    # Tailscale/LAN, plus the Tauri WebView schemes. Never allow_origins=["*"].
+    starlette_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://127.0.0.1:11092",
+            "http://localhost:11092",
+            "tauri://localhost",
+            "http://tauri.localhost",
+            "https://tauri.localhost",
+        ],
+        allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|[a-z0-9-]+(\.[a-z0-9-]+)*)(:\d+)?",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     starlette_app.add_route("/api/health", _health)
+    starlette_app.add_route("/api/status", _status)
+    starlette_app.add_route("/api/capabilities", _capabilities)
     starlette_app.add_route("/api/jobs", _jobs_list)
+    starlette_app.add_route("/api/jobs/status", _job_status, methods=["POST"])
     starlette_app.add_route("/api/shutdown", _shutdown, methods=["POST"])
     return starlette_app
 
