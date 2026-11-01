@@ -41,9 +41,12 @@ bootstrap:
 gates:
     uv run --no-sync --extra dev ruff check src tests
     uv run --no-sync --extra dev ruff format src tests --check
+    uv run --no-sync --extra dev pyright src/
     uv run --no-sync --extra dev pytest tests/ -q
     bun x tsc --noEmit -p webapp
     bun run --cwd webapp biome:ci
+    bun run --cwd webapp build
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}\\scripts\\gate-web-css.ps1"
 
 # Native shell build (Tauri NSIS) — delegates to src-tauri/build.ps1
 build-native:
