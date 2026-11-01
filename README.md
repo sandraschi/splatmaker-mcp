@@ -63,12 +63,17 @@ Unlike worldlabs-mcp (which returns `assets.mesh.collider_mesh_url` alongside ev
 ## Tools
 
 - `splat_generate` (portmanteau) — ops: `from_video`, `from_images`, `status`, `list`, `get_asset`
-- `splat_engine_status` — reports which engine is configured
+- `splat_engine_status` — reports which engine is configured, plus the cached `ns-train --help` truth (`verified` ok/broken/missing)
 - `server_shutdown` — graceful shutdown (matches `POST /api/shutdown`)
+- `show_status_card` (`app=True`) — engine + job-queue status as a Prefab card
 
 REST (backend :11091): `GET /api/health`, `GET /api/status`, `GET /api/capabilities`,
-`GET /api/jobs`, `POST /api/jobs/status`, `POST /api/shutdown`.
+`GET /api/jobs`, `POST /api/jobs/status`, `GET /api/skills`, `GET /api/logs`,
+`GET /api/llm/models`, `POST /api/llm/chat`, `POST /api/shutdown`.
 Full reference: `llms-full.txt`. All tool returns carry `success` + `message`.
+
+Webapp pages (frontend :11092): Dashboard, Generate, Jobs, Inbox, Gallery, Tools,
+Skills, Chat (local Ollama), Logs, Help (incl. what-Nerfstudio-is), Settings.
 
 ## Ports
 
