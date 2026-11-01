@@ -41,4 +41,14 @@ passes):
   `%LOCALAPPDATA%\ffmpeg\*\bin\ffmpeg.exe` if present (verified with
   gyan.dev essentials 9.0.2); otherwise put `ffmpeg` on PATH.
 
+Build toolchain (one-time, for gsplat's CUDA extension):
+`%LOCALAPPDATA%\torch_extensions` holds the compiled `gsplat_cuda` kernels.
+They were JIT-built once with MSVC + `CL=/Zc:preprocessor` (CUDA 13.3's CCCL
+hard-errors on the traditional preprocessor). If that cache is ever wiped
+(new torch major, manual deletion), rebuild with a VS Developer prompt
+(`vcvars64.bat`, then `CL=/Zc:preprocessor python -c "from
+gsplat.cuda._backend import _C"`). Day-to-day training never recompiles: the
+server only ensures `cl` is *discoverable* (vcvars import at startup) because
+torch probes the compiler on every load.
+
 Requires Python 3.12 (`requires-python = ">=3.12,<3.13"` — nerfstudio's `open3d` has no 3.13 wheel). Job state lives in `~/.splatmaker-mcp/jobs.db` (SQLite) and `~/.splatmaker-mcp/jobs/<id>/` (work dirs).
