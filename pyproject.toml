@@ -70,6 +70,11 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "T20"]
 ignore = ["E501"]
+
+# CUA operator scripts use print() as their interface (fleet template
+# cua-smoke.py v15) — same exemption as aiwatcher-mcp's scripts/**.
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = ["T20"]
 [tool.uv]
 # nerfstudio's dependency tree pulls in newrawpy, which only has pre-release
 # versions satisfying nerfstudio's constraint as of 2026-07-13 - found this

@@ -20,6 +20,12 @@ boot_err.log
 mcpb/src/
 native/target/
 native/gen/
+build/
+.coverage
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
 
 # webapp pack artifact
 webapp/*.tgz

@@ -79,6 +79,7 @@ Skills, Chat (local Ollama), Logs, Help (incl. what-Nerfstudio-is), Settings.
 
 - Backend (FastMCP HTTP `/mcp` + Starlette REST `/api/*`): **11091**
 - Frontend (Vite React dashboard): **11092**
+- Operator backend (installed Tauri app, side-by-side rule): **11259**
 
 Registered in `mcp-central-docs/operations/WEBAPP_PORTS.md`.
 

@@ -9,6 +9,8 @@ All configuration is via environment variables (see `.env.example` — copy to `
 | `SPLATMAKER_PORT` | `11091` | HTTP bind port. `MCP_PORT` is honored as a fallback. Fleet registry pair is 11091 backend / 11092 frontend. |
 | `SPLATMAKER_LOG_LEVEL` | `info` | uvicorn log level for the sidecar. |
 | `SPLATMAKER_JOBS_DB` | `~/.splatmaker-mcp/jobs.db` | SQLite job-store override (tests set this to a tmp file; set it manually to relocate the store). |
+| `MCP_PORT` / `MCP_HOST` | `11091` / `127.0.0.1` | HTTP transport selection for `python -m splatmaker_mcp` (also honors `--http`/`--port` flags) and the Tauri sidecar spawn. |
+| Operator port | `11259` (claimed `splatmaker-native`) | The installed Tauri app NEVER shares the dev backend port (side-by-side rule): backend.rs, CSP, and the Tauri `API_BASE` all point at 11259. Do not change without re-claiming. |
 
 Engine install (one time, sizeable ~276 packages, torch+CUDA/nerfstudio/gsplat):
 

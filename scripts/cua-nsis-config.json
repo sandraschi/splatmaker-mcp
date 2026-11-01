@@ -1,0 +1,15 @@
+{
+	"backend_port": 11259,
+	"product_name": "Splatmaker MCP",
+	"health_path": "/api/health",
+	"diagnostics_path": "/api/v1/diagnostics",
+	"feature_smoke_path": "/api/jobs",
+	"request_log_path": "/api/v1/request-log",
+	"window_title_re": "Splatmaker MCP",
+	"bridge_ok_text": "engine ready",
+	"install_dir": "%LOCALAPPDATA%\\Splatmaker MCP",
+	"operator_exe": "splatmaker-mcp-native.exe",
+	"backend_process_names": ["splatmaker-mcp-native", "splatmaker-mcp-backend"],
+	"nsis_glob": "src-tauri/target/release/bundle/nsis/Splatmaker MCP_*_x64-setup.exe",
+	"uninstall_registry_filter": "*Splatmaker*"
+}
