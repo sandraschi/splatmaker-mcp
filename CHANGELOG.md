@@ -1,5 +1,12 @@
 # CHANGELOG (latest release only - see git log for full history)
 
+## 0.4.0 — 2026-11-01 — first real end-to-end splat
+
+- PROVEN: full pipeline `from_images` → COLMAP (10/24 synthetic views registered) → `ns-train splatfacto` 15000 iters on RTX 4090 → `ns-export gaussian-splat` → `export/splat.ply` (**41 MB, 174,024 Gaussians**) via live MCP `tools/call` against the real backend, job `0fb0758f` `done` in the real SQLite store. Result in depot: `~/.splatmaker-mcp/jobs/0fb0758f-*/export/splat.ply`.
+- Engine self-sufficiency (all found missing during this e2e): portable COLMAP auto-PATH (`_colmap_bundled`), portable ffmpeg auto-PATH (`_ffmpeg_bundled`), UTF-8 pipes for engine children (cp1252 emoji crash), `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD` for ns-export (torch 2.6 rejects nerfstudio's own checkpoints), MSVC auto-setup via vcvars (`where cl` fails otherwise — gsplat JIT probes the compiler on every load). COLMAP 3.9.1 + ffmpeg 9.0 + gsplat CUDA extension verified working; gsplat JIT-built once with `CL=/Zc:preprocessor` (CUDA 13.3 CCCL requirement).
+- Synthetic room generator (`scripts/gen-synthetic-room.py`): projective-correct textured cube + floor, Fibonacci hemisphere views — mock data that COLMAP can actually solve (documented dead ends: isoluminant textures, repetitive dots, single-plane turntables, mask-union compositing bug).
+- README roadmap item 2 (real e2e) done for the synthetic case; real-capture run still needs Sandra's own photos.
+
 ## 0.3.0 — 2026-11-01
 
 - Engine truth: `ns-train` CLI was broken (missing absl/appdirs after a plain `uv sync` pruned the engine extra) while `is_configured()` reported ready on exe presence alone. Repaired (`uv pip install nerfstudio` full tree; verified `ns-train --help` exit 0, nerfstudio 1.1.4). New cached background `ns-train --help` probe: `/api/status` + `splat_engine_status` now report `engine_verified` (pending/ok/broken/missing) + `engine_version` + `engine_error`. Dashboard shows a repair banner when not ok.

@@ -1,7 +1,7 @@
 {
   "name": "splatmaker-mcp",
   "description": "Self-hosted, zero-marginal-cost Gaussian-splat generation - FOSS alternative to worldlabs-mcp's Marble API",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "sandraschi",
   "repository": "https://github.com/sandraschi/splatmaker-mcp",
   "tier": "standard",

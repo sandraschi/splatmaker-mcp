@@ -1,5 +1,40 @@
 # BUILD_LOG — splatmaker-mcp NSIS installer (running record)
 
+## 2026-11-01 — v0.4.0 FIRST REAL END-TO-END SPLAT (mock data, real pipeline)
+
+Job `0fb0758f-af17-444f-abbd-1974187c84c8` via live MCP `tools/call`:
+synthetic room (24 generated views, Fibonacci hemisphere) → COLMAP registered
+10/24 → `ns-train splatfacto` full 15000 iters on RTX 4090 → `ns-export
+gaussian-splat` → `export/splat.ply` (**41.16 MB, binary_little_endian,
+174,024 vertices**) in `~/.splatmaker-mcp/jobs/0fb0758f-*/`. Job `done` in
+the real SQLite store; `get_asset` returns ply/config/job_dir.
+
+What the e2e forced (all fixed in this pass, all committed before release):
+1. `is_configured()` now requires COLMAP (`shutil.which` + portable
+   `%LOCALAPPDATA%\colmap` fallback that patches PATH) AND ffmpeg (same
+   pattern) — the stage-1 binary was missing and the old check lied ready.
+2. Engine children get `PYTHONUTF8`/`PYTHONIOENCODING=utf-8` (cp1252 emoji
+   crash killed stage 1 with an empty stderr-tail mystery).
+3. `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` for ns-export (torch 2.6 rejects
+   nerfstudio's own checkpoints; ours are minutes old and self-made).
+4. MSVC auto-setup via vcvars `call` form (single-string form misparses;
+   gsplat JIT probes `where cl` on EVERY load — needs cl discoverable
+   even with a warm extension cache).
+5. ns-process-data needs console UTF-8 (`chcp 65001`) when run by hand;
+   server-driven runs are covered by (2).
+6. COLMAP + ffmpeg documented as hard prerequisites in CONFIGURATION.md
+   (with portable-install paths); request-log gained the `count` key the
+   CUA receipt proof reads (was failing 11/12 on `data.get("count", 0)`).
+7. Synthetic room generator (`scripts/gen-synthetic-room.py`): learned
+   the hard way — luminance-variegated textures (SIFT is grayscale),
+   no repetitive dots, no mask-union compositing (use painter paste),
+   tilted cube + floor for multi-face views, Fibonacci hemisphere,
+   Hartley-normalized DLT, per-corner near-plane clamping.
+
+Remaining honest gap: 10/24 views registered (synthetic doppelgangers still
+confuse the mapper on some pairs). Proof of pipeline, not of quality — the
+real-capture run (Sandra's photos) is still the one that counts.
+
 ## 2026-11-01 — v0.3.0 NSIS build (in progress)
 
 ### Phase 1 audit (TAURI_PRODUCTION_PITFALLS.md A–J) before building

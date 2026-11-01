@@ -6,7 +6,7 @@ Self-hosted, zero-marginal-cost Gaussian-splat generation, wrapping one of sever
 
 ## Status honesty
 
-This is v0.3.0. What is real: the FastMCP 3.2+ server, dual transport (stdio for Claude Desktop/Cursor, streamable HTTP on /mcp for the webapp and fleet hub), the splat_generate portmanteau tool's full schema and SQLite-backed job tracking, the splat_engine_status introspection tool, the server_shutdown tool (matches POST /api/shutdown), the /api/health, /api/status, /api/capabilities, /api/jobs endpoints plus POST /api/jobs/status, the webapp (Dashboard, Generate, Jobs), CORS per fleet standard with a same-origin webapp, and a passing test suite (8 tests).
+This is v0.4.0. What is real: the FastMCP 3.2+ server, dual transport (stdio for Claude Desktop/Cursor, streamable HTTP on /mcp for the webapp and fleet hub), the splat_generate portmanteau tool's full schema and SQLite-backed job tracking, the splat_engine_status introspection tool, the server_shutdown tool (matches POST /api/shutdown), the /api/health, /api/status, /api/capabilities, /api/jobs endpoints plus POST /api/jobs/status, the webapp (Dashboard, Generate, Jobs), CORS per fleet standard with a same-origin webapp, and a passing test suite (8 tests).
 
 What is not yet real: a full end-to-end training run against real capture data (needs Sandra's own photos/video of a real space - Nerfstudio's demo datasets are blocked by an external Google permission issue). No MCPB bundle yet. No Chat/Skills/Help/Logs webapp pages yet.
 

@@ -1,7 +1,7 @@
 {
 	"manifest_version": "0.2",
 	"name": "splatmaker-mcp",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"description": "Self-hosted, zero-marginal-cost Gaussian-splat generation. FOSS alternative to paid splat APIs - point at a video or images, get a navigable 3D world, computed on local hardware (Nerfstudio/Splatfacto).",
 	"author": {
 		"name": "Sandra Schipal"
