@@ -23,11 +23,15 @@ Portmanteau tool. operation is one of:
 
 ### splat_engine_status()
 
-No arguments. Returns {success, engine, configured, max_iterations, note, message} describing which engine (if any) is set and whether the real nerfstudio CLI is present (`uv sync --extra engine`).
+No arguments. Returns {success, engine, configured, verified, engine_version, engine_error, max_iterations, note, message} describing which engine (if any) is set, whether the real nerfstudio CLI is present (`uv sync --extra engine`), and the cached `ns-train --help` truth (verified ok/broken/missing/pending).
 
 ### server_shutdown()
 
 No arguments. Returns {success, status, message}. Matches POST /api/shutdown - both call the same underlying implementation (exit ~0.5s after responding).
+
+### show_status_card()
+
+No arguments. `@mcp.tool(app=True)` Prefab card with engine state + job counts by status; plain-text content mirrors the card for text-only hosts.
 
 ## REST endpoints (backend :11091)
 
@@ -36,6 +40,10 @@ No arguments. Returns {success, status, message}. Matches POST /api/shutdown - b
 - GET /api/capabilities - tool catalog + REST route list + ports
 - GET /api/jobs - all jobs with kind/status/message
 - POST /api/jobs/status {job_id} - one job's status/message
+- GET /api/skills - splat_workflow prompt text + resource descriptor
+- GET /api/logs - in-memory log ring (?limit, max 500)
+- GET /api/llm/models - completion-capable local Ollama models
+- POST /api/llm/chat {model, messages, system?} - Ollama chat passthrough (non-streaming)
 - POST /api/shutdown - orderly exit (200 immediately, process exits ~500ms later)
 
 CORS: explicit origins (dev frontend :11092, Tauri schemes) + LAN/Tailscale regex. Webapp uses same-origin /api via the vite proxy; absolute backend URL only inside Tauri.

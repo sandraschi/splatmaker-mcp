@@ -1,0 +1,9 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "standard",
+  "reportMissingImports": true,
+  "reportArgumentType": true,
+  "reportReturnType": true,
+  "reportUnusedCallResult": false
+}

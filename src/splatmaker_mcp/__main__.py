@@ -8,20 +8,27 @@ import argparse
 import asyncio
 import logging
 
+import httpx
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from splatmaker_mcp.server import (
+    _LOG_RING,
     BACKEND_PORT,
     SERVER_ID,
     SERVER_VERSION,
+    SPLAT_WORKFLOW_TEXT,
     _do_shutdown,
     _jobs,
     _register_with_hub,
+    backend,
+    ensure_engine_check,
     health_payload,
     mcp,
 )
+
+OLLAMA_URL = "http://localhost:11434"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -40,6 +47,7 @@ async def _jobs_list(request):  # noqa: ANN001
                     "status": j.status,
                     "created_at": j.created_at,
                     "message": j.message,
+                    "asset_paths": j.asset_paths,
                 }
                 for j in _jobs.values()
             ]
@@ -54,6 +62,7 @@ async def _shutdown(request):  # noqa: ANN001 - Starlette handler signature
 
 async def _status(request):  # noqa: ANN001 - Starlette handler signature
     h = health_payload()
+    state = ensure_engine_check()
     return JSONResponse(
         {
             "server": h["server"],
@@ -61,8 +70,17 @@ async def _status(request):  # noqa: ANN001 - Starlette handler signature
             "status": h["status"],
             "uptime_seconds": h["uptime_seconds"],
             "engine_configured": h["engine_configured"],
-            "tool_count": 3,
-            "tools": ["splat_generate", "splat_engine_status", "server_shutdown"],
+            "engine_verified": state["status"],
+            "engine_version": state["version"],
+            "engine_error": state["error"],
+            "max_iterations": backend.max_iterations,
+            "tool_count": 4,
+            "tools": [
+                "splat_generate",
+                "splat_engine_status",
+                "server_shutdown",
+                "show_status_card",
+            ],
             "job_count": len(_jobs),
             "jobs_by_status": {
                 s: sum(1 for j in _jobs.values() if j.status == s)
@@ -93,12 +111,21 @@ async def _capabilities(request):  # noqa: ANN001 - Starlette handler signature
                     "operations": [],
                     "description": "Gracefully shut down this server.",
                 },
+                {
+                    "name": "show_status_card",
+                    "operations": [],
+                    "description": "Engine + job-queue status as a rich Prefab card.",
+                },
             ],
             "rest": [
                 "/api/health",
                 "/api/status",
                 "/api/capabilities",
                 "/api/jobs",
+                "/api/skills",
+                "/api/logs",
+                "/api/llm/models",
+                "/api/llm/chat",
                 "/api/v1/diagnostics",
             ],
             "ports": {"backend": BACKEND_PORT},
@@ -114,13 +141,94 @@ async def _diagnostics(request):  # noqa: ANN001 - Starlette handler signature
         {
             "server": SERVER_ID,
             "version": SERVER_VERSION,
-            "tools": ["splat_generate", "splat_engine_status", "server_shutdown"],
+            "tools": [
+                "splat_generate",
+                "splat_engine_status",
+                "server_shutdown",
+                "show_status_card",
+            ],
             "system": {"python": platform.python_version(), "platform": platform.platform()},
             "engine_configured": h["engine_configured"],
             "job_count": len(_jobs),
             "errors": [],
         }
     )
+
+
+async def _skills(request):  # noqa: ANN001 - Starlette handler signature
+    """Machine-readable skill surface for the webapp Skills page."""
+    return JSONResponse(
+        {
+            "prompt": {"name": "splat_workflow", "text": SPLAT_WORKFLOW_TEXT},
+            "resource": {"uri": "splatmaker://jobs", "description": "Live job ledger JSON"},
+        }
+    )
+
+
+async def _logs_list(request: Request):
+    """Ring-buffer logs for the webapp Logs page. ?limit=N (default 200, max 500)."""
+    try:
+        limit = int(request.query_params.get("limit", "200"))
+    except ValueError:
+        limit = 200
+    limit = max(1, min(limit, 500))
+    return JSONResponse({"logs": list(_LOG_RING)[-limit:]})
+
+
+async def _llm_models(request):  # noqa: ANN001 - Starlette handler signature
+    """Completion-capable local models (Ollama passthrough for the webapp Chat page)."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{OLLAMA_URL}/api/tags")
+        if resp.status_code != 200:
+            return JSONResponse({"models": [], "error": f"ollama HTTP {resp.status_code}"})
+        names = [
+            m["name"]
+            for m in resp.json().get("models", [])
+            if "completion" in (m.get("capabilities") or [])
+        ]
+        return JSONResponse({"models": names})
+    except Exception as exc:
+        return JSONResponse({"models": [], "error": f"ollama unreachable: {exc}"})
+
+
+async def _llm_chat(request: Request):
+    """Chat completion via local Ollama (non-streaming). Body: {"model", "messages": [{role, content}], "system"?}."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            {"error": 'invalid JSON body, expected {"model": ..., "messages": [...]}'},
+            status_code=400,
+        )
+    model = body.get("model") if isinstance(body, dict) else None
+    messages = body.get("messages") if isinstance(body, dict) else None
+    if not model or not isinstance(messages, list) or not messages:
+        return JSONResponse(
+            {"error": 'body needs {"model": str, "messages": [{role, content}, ...]}'},
+            status_code=400,
+        )
+    system = body.get("system") if isinstance(body, dict) else None
+    payload_messages = ([{"role": "system", "content": system}] if system else []) + [
+        {"role": m.get("role", "user"), "content": m.get("content", "")}
+        for m in messages
+        if isinstance(m, dict)
+    ]
+    try:
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            resp = await client.post(
+                f"{OLLAMA_URL}/api/chat",
+                json={"model": model, "messages": payload_messages, "stream": False},
+            )
+    except Exception as exc:
+        return JSONResponse({"error": f"ollama unreachable: {exc}"}, status_code=502)
+    if resp.status_code != 200:
+        return JSONResponse(
+            {"error": f"ollama HTTP {resp.status_code}: {resp.text[:500]}"}, status_code=502
+        )
+    data = resp.json()
+    content = ((data.get("message") or {}).get("content")) or ""
+    return JSONResponse({"model": data.get("model", model), "message": content})
 
 
 async def _job_status(request: Request):
@@ -171,6 +279,10 @@ def build_http_app():
     starlette_app.add_route("/api/capabilities", _capabilities)
     starlette_app.add_route("/api/jobs", _jobs_list)
     starlette_app.add_route("/api/jobs/status", _job_status, methods=["POST"])
+    starlette_app.add_route("/api/skills", _skills)
+    starlette_app.add_route("/api/logs", _logs_list)
+    starlette_app.add_route("/api/llm/models", _llm_models)
+    starlette_app.add_route("/api/llm/chat", _llm_chat, methods=["POST"])
     starlette_app.add_route("/api/v1/diagnostics", _diagnostics)
     starlette_app.add_route("/api/shutdown", _shutdown, methods=["POST"])
     return starlette_app

@@ -2619,6 +2619,20 @@ wheels = [
 ]
 
 [[package]]
+name = "prefab-ui"
+version = "0.21.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cyclopts" },
+    { name = "pydantic" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3e/b8/81abe3ba9a85e3862933b274bd7293eef557415e21d00c3b7efdf73a67d8/prefab_ui-0.21.1.tar.gz", hash = "sha256:26e84e0ba195845edd1f36ff88a2ef3d76e9d79044518fa6636a5862e0a1bac5", size = 4442004, upload-time = "2026-10-26T19:18:08.154Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/06/b4fdf18094199cf470dc9f33fff1ba945f7108e1b177d3d14a4eb9273f1c/prefab_ui-0.21.1-py3-none-any.whl", hash = "sha256:94185e9032475ec1b348fc70e23ba5328f458279e0b8af972aa7c755ff9301d3", size = 2039921, upload-time = "2026-10-26T19:18:06.375Z" },
+]
+
+[[package]]
 name = "prometheus-client"
 version = "0.25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2907,6 +2921,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/3d092aa20efaedacb89c3221a92c6491be5b28f618a2c36b52b53e7446c2/pyquaternion-0.9.9.tar.gz", hash = "sha256:b1f61af219cb2fe966b5fb79a192124f2e63a3f7a777ac3cadf2957b1a81bea8", size = 15530, upload-time = "2020-10-05T01:31:30.327Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/49/b3/d8482e8cacc8ea15a356efea13d22ce1c5914a9ee36622ba250523240bf2/pyquaternion-0.9.9-py3-none-any.whl", hash = "sha256:e65f6e3f7b1fdf1a9e23f82434334a1ae84f14223eee835190cd2e841f8172ec", size = 14361, upload-time = "2020-10-05T01:31:37.575Z" },
+]
+
+[[package]]
+name = "pyright"
+version = "1.1.414"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nodeenv" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/1b/244c7b710031ada80f27e579ec20d28a2285dfc318fed0339866b1047f12/pyright-1.1.414.tar.gz", hash = "sha256:523c0a97c60da6333234955c277730c9cf4f5bd6d5399e7b7d2b0fc5d3599524", size = 4154638, upload-time = "2026-09-10T12:26:53.181Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/ba/18b6e682ead424ad24bcc134339ae5d1b931cd9ae260540592a058a91279/pyright-1.1.414-py3-none-any.whl", hash = "sha256:2a6b4b3298c9eec174c5ed83bd338de6eee82df2992f3e1930e6199d381be36f", size = 6225049, upload-time = "2026-09-10T12:26:51.427Z" },
 ]
 
 [[package]]
@@ -3559,6 +3586,8 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "prefab-ui" },
+    { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -3583,7 +3612,9 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=3.4.4,<4" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "nerfstudio", marker = "extra == 'engine'", specifier = ">=1.1" },
+    { name = "prefab-ui", marker = "extra == 'dev'", specifier = ">=0.21" },
     { name = "pydantic", specifier = ">=2.0" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },

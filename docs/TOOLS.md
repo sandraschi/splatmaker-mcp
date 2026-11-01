@@ -16,11 +16,15 @@ All returns carry `success` + `message`; failures also carry `error`.
 
 ### `splat_engine_status()`
 
-`{success, engine, configured, max_iterations, note, message}`. `configured` is False until `uv sync --extra engine` puts the real `ns-*` CLI on PATH.
+`{success, engine, configured, verified, engine_version, engine_error, max_iterations, note, message}`. `configured` is the fast exe check; `verified` is the cached `ns-train --help` truth (`pending` until the background probe lands, then `ok`/`broken`/`missing`).
 
 ### `server_shutdown()`
 
 `{success, status: "shutting_down", message}`. Same implementation as `POST /api/shutdown`.
+
+### `show_status_card()`
+
+`@mcp.tool(app=True)` Prefab card: engine state + job counts by status as a rich card for Prefab-capable hosts. Plain-text `content` mirrors the card numbers; `structured_content` carries the `PrefabApp` view.
 
 ## Prompt + resource
 
@@ -36,6 +40,10 @@ All returns carry `success` + `message`; failures also carry `error`.
 | `GET /api/capabilities` | Machine-readable tool catalog + REST routes + ports. |
 | `GET /api/jobs` | All jobs. |
 | `POST /api/jobs/status` | Body `{"job_id": ...}` → status/message. |
+| `GET /api/skills` | Prompt text (`splat_workflow`) + resource descriptor for the Skills page. |
+| `GET /api/logs` | In-memory log ring (`?limit`, max 500) for the Logs page. |
+| `GET /api/llm/models` | Completion-capable local Ollama models for the Chat page. |
+| `POST /api/llm/chat` | Body `{"model", "messages": [{role, content}], "system"?}` → Ollama `/api/chat` (non-streaming). 502 when Ollama is down. |
 | `POST /api/shutdown` | Orderly exit (responds 200, exits ~500ms later). |
 
 ## Downstream note (load-bearing)

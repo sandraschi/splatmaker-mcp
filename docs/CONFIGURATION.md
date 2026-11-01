@@ -17,4 +17,12 @@ uv sync --extra engine
 uv run --extra engine ns-train --help
 ```
 
+WARNING: a plain `uv sync` (without `--extra engine`, e.g. the justfile
+`sync` recipe or CI) silently UNINSTALLS the engine packages again — uv
+prunes extras not in the target set (observed 2026-11-01: ns-train crashed
+on missing absl/appdirs after such a prune). Always re-sync WITH the extra
+after any plain sync: `just sync-engine`. Verify with
+`ns-train --help` (exit 0). The webapp Status page reports the cached
+`ns-train --help` truth (`engine_verified`), not just exe presence.
+
 Requires Python 3.12 (`requires-python = ">=3.12,<3.13"` — nerfstudio's `open3d` has no 3.13 wheel). Job state lives in `~/.splatmaker-mcp/jobs.db` (SQLite) and `~/.splatmaker-mcp/jobs/<id>/` (work dirs).

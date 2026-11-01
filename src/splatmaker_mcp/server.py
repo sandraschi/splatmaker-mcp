@@ -22,10 +22,13 @@ import json as _json
 import logging
 import shutil
 import sqlite3 as _sqlite
+import subprocess
 import sys
 import tempfile as _tempfile
+import threading
 import time
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -33,9 +36,26 @@ from typing import Literal
 
 import httpx
 from fastmcp import Context, FastMCP
-from fastmcp.tools.tool import ToolAnnotations
+from fastmcp.tools import ToolResult
+from fastmcp.tools.tool import ToolAnnotations  # type: ignore[reportMissingImports]
 
 logger = logging.getLogger("splatmaker_mcp")
+
+# In-memory log ring (backs GET /api/logs for the webapp Logs page).
+_LOG_RING: deque[str] = deque(maxlen=500)
+
+
+class _RingHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            _LOG_RING.append(self.format(record))
+        except Exception:
+            pass
+
+
+_ring_handler = _RingHandler()
+_ring_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+logging.getLogger().addHandler(_ring_handler)
 
 
 def _error_response(message: str, error: str | None = None) -> dict:
@@ -159,10 +179,19 @@ class SplatBackend:
         export_dir = job_dir / "export"
         job_dir.mkdir(parents=True, exist_ok=True)
 
+        exe_process = self._resolve_exe("ns-process-data")
+        exe_train = self._resolve_exe("ns-train")
+        exe_export = self._resolve_exe("ns-export")
+        if not (exe_process and exe_train and exe_export):
+            return EngineResult(
+                ok=False,
+                message="ns-process-data/ns-train/ns-export not all found on PATH",
+            )
+
         # Stage 1: ns-process-data {images|video} --data <in> --output-dir <out>
         rc, _out, err = await self._run(
             [
-                self._resolve_exe("ns-process-data"),
+                exe_process,
                 kind,
                 "--data",
                 input_path,
@@ -181,7 +210,7 @@ class SplatBackend:
         # just logs to disk, no port/connection concerns for automation)
         rc, _out, err = await self._run(
             [
-                self._resolve_exe("ns-train"),
+                exe_train,
                 "splatfacto",
                 "--data",
                 str(processed_dir),
@@ -207,7 +236,7 @@ class SplatBackend:
         # Stage 3: ns-export gaussian-splat --load-config <config> --output-dir <out>
         rc, _out, err = await self._run(
             [
-                self._resolve_exe("ns-export"),
+                exe_export,
                 "gaussian-splat",
                 "--load-config",
                 str(config_path),
@@ -259,6 +288,69 @@ class SplatBackend:
 backend = SplatBackend(
     engine=SplatEngine.NERFSTUDIO
 )  # decided 2026-07-13; is_configured() checks the real CLI is present
+
+
+# ---------------------------------------------------------------------------
+# Engine truth - exe-present is NOT sufficient (2026-11-01: ns-train.exe
+# existed while the CLI crashed on missing modules, so
+# is_configured() reported a broken engine as ready). The fast exe check
+# stays for liveness; this cached `--help` probe is the truth. Three
+# states: pending (probe running) / ok / broken|missing. Never blocks -
+# callers get the current state immediately and the daemon thread fills it in.
+# ---------------------------------------------------------------------------
+
+_ENGINE_STATE: dict = {"status": "pending", "version": "", "error": ""}
+_ENGINE_CHECK_STARTED = False
+_ENGINE_LOCK = threading.Lock()
+
+
+def _engine_check_worker() -> None:
+    # NOTE: ns-train has NO --version flag (it exits 2 with usage text).
+    # Proof of life is `--help` (exit 0); the version comes from the installed
+    # distribution metadata (fast, no heavy import).
+    try:
+        from importlib.metadata import PackageNotFoundError
+        from importlib.metadata import version as _dist_version
+
+        try:
+            ns_version = _dist_version("nerfstudio")
+        except PackageNotFoundError:
+            ns_version = ""
+    except Exception:
+        ns_version = ""
+    exe = SplatBackend._resolve_exe("ns-train")
+    if not exe:
+        with _ENGINE_LOCK:
+            _ENGINE_STATE.update(status="missing", error="ns-train not found on PATH")
+        return
+    try:
+        proc = subprocess.run([exe, "--help"], capture_output=True, text=True, timeout=180)
+        lines = (proc.stdout + proc.stderr).strip().splitlines()
+        with _ENGINE_LOCK:
+            if proc.returncode == 0:
+                _ENGINE_STATE.update(status="ok", version=ns_version, error="")
+            else:
+                _ENGINE_STATE.update(
+                    status="broken",
+                    version=ns_version,
+                    error=f"ns-train --help exit {proc.returncode}: {(lines[-1] if lines else '')[:300]}",
+                )
+    except Exception as exc:
+        with _ENGINE_LOCK:
+            _ENGINE_STATE.update(status="broken", version=ns_version, error=str(exc)[:300])
+
+
+def ensure_engine_check() -> dict:
+    """Start the one-shot background `--version` probe if never started.
+
+    Always returns the current state immediately (never blocks).
+    """
+    global _ENGINE_CHECK_STARTED
+    with _ENGINE_LOCK:
+        if not _ENGINE_CHECK_STARTED and _ENGINE_STATE["status"] == "pending":
+            _ENGINE_CHECK_STARTED = True
+            threading.Thread(target=_engine_check_worker, daemon=True).start()
+        return dict(_ENGINE_STATE)
 
 
 # ---------------------------------------------------------------------------
@@ -379,12 +471,13 @@ async def _run_job(job: Job, coro) -> None:
 
 
 @mcp.tool(
+    output_schema={"type": "object"},
     annotations=ToolAnnotations(
         read_only_hint=False,
         destructive_hint=False,
         idempotent_hint=False,
         open_world_hint=False,
-    )
+    ),
 )
 async def splat_generate(
     ctx: Context,
@@ -501,7 +594,8 @@ async def splat_generate(
 
 
 @mcp.tool(
-    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False)
+    output_schema={"type": "object"},
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False),
 )
 async def splat_engine_status(ctx: Context) -> dict:
     """Report which splat engine is configured and whether the real CLI
@@ -509,14 +603,19 @@ async def splat_engine_status(ctx: Context) -> dict:
 
     ## Return Format
     `{"success": True, "engine": str, "configured": bool,
-    "max_iterations": int, "note": str, "message": str}` — `message` mirrors
+    "max_iterations": int, "note": str, "message": str,
+    "verified": "pending"|"ok"|"broken"|"missing",
+    "engine_version": str, "engine_error": str}` — `message` mirrors
     `note` so fleet tooling can render the result without special-casing it.
+    `configured` is the fast exe check; `verified` is the cached
+    `ns-train --help` truth (pending until the background probe lands).
 
     ## Examples
     `splat_engine_status()` -> `{"success": True, "engine": "nerfstudio",
     "configured": True, "max_iterations": 15000, "note": ..., "message": ...}`
     """
     configured = backend.is_configured()
+    state = ensure_engine_check()
     note = (
         "nerfstudio CLI not found on PATH or next to the venv's python - "
         "run `uv sync --extra engine` (real, sizeable install: torch+CUDA, "
@@ -530,6 +629,9 @@ async def splat_engine_status(ctx: Context) -> dict:
         "success": True,
         "engine": backend.engine.value,
         "configured": configured,
+        "verified": state["status"],
+        "engine_version": state["version"],
+        "engine_error": state["error"],
         "max_iterations": backend.max_iterations,
         "note": note,
         "message": note,
@@ -607,9 +709,10 @@ async def _do_shutdown(delay_seconds: float = 0.5) -> None:
 
 
 @mcp.tool(
+    output_schema={"type": "object"},
     annotations=ToolAnnotations(
         read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=False
-    )
+    ),
 )
 async def server_shutdown(ctx: Context) -> dict:
     """Gracefully shut down this server. Matches the REST /api/shutdown
@@ -626,6 +729,83 @@ async def server_shutdown(ctx: Context) -> dict:
     return {"success": True, "status": "shutting_down", "message": "Server will exit in ~0.5s"}
 
 
+@mcp.tool(
+    app=True,
+    output_schema={"type": "object"},
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True, open_world_hint=False),
+)
+async def show_status_card(ctx: Context) -> ToolResult:
+    """Show splatmaker engine + job-queue status as a rich Prefab card.
+
+    ## Return Format
+    A `ToolResult` with plain-text `content` (same numbers as the card) and
+    `structured_content` carrying the `PrefabApp` view for Prefab-capable hosts.
+
+    ## Examples
+    `show_status_card()` -> card with engine state, job counts by status, backend port.
+    """
+    from prefab_ui.app import PrefabApp
+    from prefab_ui.components import (
+        Card,
+        CardContent,
+        Column,
+        Grid,
+        Heading,
+        Muted,
+        Separator,
+    )
+
+    h = health_payload()
+    state = ensure_engine_check()
+    by_status = {
+        s: sum(1 for j in _jobs.values() if j.status == s)
+        for s in ("queued", "running", "done", "failed")
+    }
+    with Column(gap=4, css_class="p-4") as view:
+        Heading("Splatmaker - Engine + Job Queue")
+        Separator()
+        with Grid(columns=3, gap=3):
+            for label, value in [
+                ("Engine", backend.engine.value),
+                (
+                    "Engine ready",
+                    "yes" if h["engine_configured"] else "no (uv sync --extra engine)",
+                ),
+                ("Jobs tracked", str(len(_jobs))),
+                ("Queued", str(by_status["queued"])),
+                ("Running", str(by_status["running"])),
+                ("Done / failed", f"{by_status['done']} / {by_status['failed']}"),
+            ]:
+                with Card(), CardContent(css_class="pt-4"):
+                    Muted(label)
+                    Heading(value)
+
+    text = (
+        f"Splatmaker status: engine={backend.engine.value} "
+        f"(configured={h['engine_configured']}, verified={state['status']}"
+        + (f" {state['version']}" if state["version"] else "")
+        + (f" - {state['error']}" if state["error"] else "")
+        + f"), jobs={len(_jobs)} "
+        f"(queued={by_status['queued']}, running={by_status['running']}, "
+        f"done={by_status['done']}, failed={by_status['failed']})."
+    )
+    return ToolResult(
+        content=text,
+        structured_content=PrefabApp(view=view, title="Splatmaker Status"),
+    )
+
+
+SPLAT_WORKFLOW_TEXT = (
+    "Splatmaker workflow: (1) capture - one folder of sharp, overlapping phone "
+    "photos (or a slow walk-around video); (2) generate - call splat_generate "
+    "from_video/from_images, it returns immediately with a job_id; (3) poll - "
+    "splat_generate status until done (real training takes minutes); (4) fetch - "
+    "get_asset for the .ply path; (5) collide - route the .ply through "
+    "blender-mcp blender_splatting for a collision mesh before any VR use "
+    "(this server never emits a collider)."
+)
+
+
 @mcp.prompt()
 def splat_workflow() -> str:
     """Guided prompt: capture -> generate -> poll -> collider mesh.
@@ -636,15 +816,7 @@ def splat_workflow() -> str:
     ## Examples
     `splat_workflow` -> multi-step instructions for a from_video job.
     """
-    return (
-        "Splatmaker workflow: (1) capture - one folder of sharp, overlapping phone "
-        "photos (or a slow walk-around video); (2) generate - call splat_generate "
-        "from_video/from_images, it returns immediately with a job_id; (3) poll - "
-        "splat_generate status until done (real training takes minutes); (4) fetch - "
-        "get_asset for the .ply path; (5) collide - route the .ply through "
-        "blender-mcp blender_splatting for a collision mesh before any VR use "
-        "(this server never emits a collider)."
-    )
+    return SPLAT_WORKFLOW_TEXT
 
 
 @mcp.resource("splatmaker://jobs")

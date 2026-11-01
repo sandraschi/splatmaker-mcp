@@ -1,6 +1,14 @@
 # CHANGELOG (latest release only - see git log for full history)
 
-## Unreleased — assfix 2026-11-01
+## Unreleased — assfix 2026-11-01 (engine truth + catch-them-all webapp)
+
+- Engine truth: `ns-train` CLI was broken (missing absl/appdirs after a plain `uv sync` pruned the engine extra) while `is_configured()` reported ready on exe presence alone. Repaired (`uv pip install nerfstudio` full tree; verified `ns-train --help` exit 0, nerfstudio 1.1.4). New cached background `ns-train --help` probe: `/api/status` + `splat_engine_status` now report `engine_verified` (pending/ok/broken/missing) + `engine_version` + `engine_error`. Dashboard shows a repair banner when not ok.
+- `just sync-engine` recipe (the only correct engine install; plain sync strips it — documented in CONFIGURATION.md).
+- New REST: `GET /api/skills`, `GET /api/logs` (500-line ring), `GET /api/llm/models` + `POST /api/llm/chat` (local Ollama passthrough, proven live with llama3.2:3b).
+- Webapp catch-them-all: Tools, Skills, Help (incl. what-Nerfstudio-is + install/repair), Logs, Inbox (failed/in-flight jobs), Chat (local models, persisted history), plus real Gallery (finished jobs + .ply paths) and Settings (engine + env). Nav grew 5 → 11 entries.
+- CSS gate (`scripts/gate-web-css.ps1`) wired into `just gates` + CI: built CSS < 5 kB or raw `@tailwind` fails loudly.
+
+## Unreleased — assfix 2026-11-01 (earlier same day)
 
 - Webapp: added `@tauri-apps/api ^2.2.0` dependency (checklist 1H gate — was the single HIGH blocking the native row; `bun install` + `tsc` + `biome:ci` re-proven green).
 - Tests: SQLite job-store isolation — `SPLATMAKER_JOBS_DB` env override plus `tests/conftest.py` bootstrap and a per-test tmp fixture, so pytest no longer writes failed-job rows to the real `~/.splatmaker-mcp/jobs.db` (M36 closed; proven: real DB mtime untouched by a full run).

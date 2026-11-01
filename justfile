@@ -8,6 +8,14 @@ default:
 sync:
     uv sync --extra dev
 
+# Engine sync - the ONLY correct way to (re)install the nerfstudio engine.
+# Plain `just sync` / `uv sync` PRUNES engine packages (uv removes extras not
+# in the target set). Always run this after any plain sync. Verifies with
+# ns-train --help (exit 0). See docs/CONFIGURATION.md.
+sync-engine:
+    uv sync --extra engine
+    uv run --extra engine ns-train --help
+
 test:
     uv run --extra dev pytest -v
 
