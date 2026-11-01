@@ -248,6 +248,16 @@ class SplatBackend:
         env = dict(os.environ)
         env.setdefault("PYTHONUTF8", "1")
         env.setdefault("PYTHONIOENCODING", "utf-8")
+        # torch>=2.6 defaults torch.load to weights_only=True, which rejects
+        # nerfstudio's own checkpoints (numpy scalar globals). Our checkpoints
+        # are minutes old and produced by our own training, so loading them is
+        # safe by construction; this uses torch's documented opt-out (only
+        # applies when the callsite did not pass weights_only explicitly,
+        # which nerfstudio's eval_load_checkpoint does not). Without it every
+        # ns-export dies in UnpicklingError. Revisit when nerfstudio>=1.1.5
+        # becomes installable on 3.12 (1.1.5 needs a pymeshlab wheel that does
+        # not exist for cp312 as of 2026-11-01).
+        env.setdefault("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
         logger.info("splatmaker subprocess: %s", " ".join(cmd))
         proc = await asyncio.create_subprocess_exec(
             *cmd,
