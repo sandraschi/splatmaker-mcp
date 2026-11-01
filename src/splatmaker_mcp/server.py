@@ -123,10 +123,35 @@ class SplatBackend:
         self._work_root.mkdir(parents=True, exist_ok=True)
 
     def is_configured(self) -> bool:
+        # COLMAP is a hard stage-1 requirement (ns-process-data shells out to
+        # the `colmap` binary) — exe presence for the ns-* CLIs alone is not
+        # enough (2026-11-01: engine reported ready with no COLMAP on PATH).
         return (
             self._resolve_exe("ns-train") is not None
             and self._resolve_exe("ns-process-data") is not None
+            and (shutil.which("colmap") is not None or self._colmap_bundled() is not None)
         )
+
+    @staticmethod
+    def _colmap_bundled() -> str | None:
+        """Portable COLMAP fallback: %LOCALAPPDATA%\\colmap\\COLMAP-*-windows-*/bin\\colmap.exe
+        (see docs/CONFIGURATION.md). The dir is prepended to this process's
+        PATH so ns-process-data finds the binary with no system install."""
+        import os
+
+        root = Path(os.environ.get("LOCALAPPDATA", "")) / "colmap"
+        if not root.is_dir():
+            return None
+        for exe in root.rglob("bin/colmap.exe"):
+            bindir = str(exe.parent)
+            libdir = str(exe.parent.parent / "lib")
+            path = os.environ.get("PATH", "")
+            for d in (bindir, libdir):
+                if d.lower() not in path.lower():
+                    os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
+                    logger.info("splatmaker: added COLMAP dir to PATH: %s", d)
+            return str(exe)
+        return None
 
     @staticmethod
     def _resolve_exe(name: str) -> str | None:
@@ -617,10 +642,11 @@ async def splat_engine_status(ctx: Context) -> dict:
     configured = backend.is_configured()
     state = ensure_engine_check()
     note = (
-        "nerfstudio CLI not found on PATH or next to the venv's python - "
-        "run `uv sync --extra engine` (real, sizeable install: torch+CUDA, "
-        "nerfstudio, and gsplat - ~276 packages, verified working on Goliath "
-        "2026-07-13 with an RTX 4090)."
+        "engine CLIs not all found (need ns-train + ns-process-data on PATH "
+        "or next to the venv's python, plus a `colmap` binary) - run "
+        "`uv sync --extra engine` (torch+CUDA, nerfstudio, gsplat - ~276 "
+        "packages), install portable COLMAP under %LOCALAPPDATA%\\colmap "
+        "(see docs/CONFIGURATION.md), and make sure ffmpeg is on PATH."
         if not configured
         else "nerfstudio CLI verified present; real ns-process-data/ns-train/ns-export "
         "pipeline wired and ready."

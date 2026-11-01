@@ -27,4 +27,17 @@ after any plain sync: `just sync-engine`. Verify with
 `ns-train --help` (exit 0). The webapp Status page reports the cached
 `ns-train --help` truth (`engine_verified`), not just exe presence.
 
+COLMAP + ffmpeg (hard stage-1 requirements — `ns-process-data` shells out
+to both; the engine is NOT ready without them even when `ns-train --help`
+passes):
+
+- COLMAP 3.9.1 portable (CUDA build): download
+  `COLMAP-3.9.1-windows-cuda.zip` from github.com/colmap/colmap releases,
+  extract to `%LOCALAPPDATA%\colmap` (so `.../bin/colmap.exe` +
+  `.../lib/*.dll` exist). The server auto-adds that `bin/`+`lib/` to its
+  own PATH at startup (no system install, no reboot). Verify with
+  `colmap --help` after adding the two dirs to PATH in your shell.
+- ffmpeg: any recent static build on PATH (e.g. gyan.dev essentials into
+  `%LOCALAPPDATA%\ffmpeg`, `bin/` on PATH). Verified with 9.0.2.
+
 Requires Python 3.12 (`requires-python = ">=3.12,<3.13"` — nerfstudio's `open3d` has no 3.13 wheel). Job state lives in `~/.splatmaker-mcp/jobs.db` (SQLite) and `~/.splatmaker-mcp/jobs/<id>/` (work dirs).
