@@ -123,13 +123,15 @@ class SplatBackend:
         self._work_root.mkdir(parents=True, exist_ok=True)
 
     def is_configured(self) -> bool:
-        # COLMAP is a hard stage-1 requirement (ns-process-data shells out to
-        # the `colmap` binary) — exe presence for the ns-* CLIs alone is not
-        # enough (2026-11-01: engine reported ready with no COLMAP on PATH).
+        # ns-* exes + COLMAP + ffmpeg are ALL hard stage-1 requirements
+        # (ns-process-data shells out to both binaries; exe presence for the
+        # ns-* CLIs alone is not enough — 2026-11-01: e2e failed on missing
+        # ffmpeg with an empty stderr).
         return (
             self._resolve_exe("ns-train") is not None
             and self._resolve_exe("ns-process-data") is not None
             and (shutil.which("colmap") is not None or self._colmap_bundled() is not None)
+            and (shutil.which("ffmpeg") is not None or self._ffmpeg_bundled() is not None)
         )
 
     @staticmethod
@@ -150,6 +152,23 @@ class SplatBackend:
                 if d.lower() not in path.lower():
                     os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
                     logger.info("splatmaker: added COLMAP dir to PATH: %s", d)
+            return str(exe)
+        return None
+
+    @staticmethod
+    def _ffmpeg_bundled() -> str | None:
+        """Portable ffmpeg fallback: %LOCALAPPDATA%\\ffmpeg\\*\\bin\\ffmpeg.exe.
+        Same deal as COLMAP — dir is prepended to this process's PATH."""
+        import os
+
+        root = Path(os.environ.get("LOCALAPPDATA", "")) / "ffmpeg"
+        if not root.is_dir():
+            return None
+        for exe in root.rglob("bin/ffmpeg.exe"):
+            bindir = str(exe.parent)
+            if bindir.lower() not in os.environ.get("PATH", "").lower():
+                os.environ["PATH"] = bindir + os.pathsep + os.environ.get("PATH", "")
+                logger.info("splatmaker: added ffmpeg dir to PATH: %s", bindir)
             return str(exe)
         return None
 

@@ -37,7 +37,8 @@ passes):
   `.../lib/*.dll` exist). The server auto-adds that `bin/`+`lib/` to its
   own PATH at startup (no system install, no reboot). Verify with
   `colmap --help` after adding the two dirs to PATH in your shell.
-- ffmpeg: any recent static build on PATH (e.g. gyan.dev essentials into
-  `%LOCALAPPDATA%\ffmpeg`, `bin/` on PATH). Verified with 9.0.2.
+- ffmpeg: any recent static build. The server auto-uses
+  `%LOCALAPPDATA%\ffmpeg\*\bin\ffmpeg.exe` if present (verified with
+  gyan.dev essentials 9.0.2); otherwise put `ffmpeg` on PATH.
 
 Requires Python 3.12 (`requires-python = ">=3.12,<3.13"` — nerfstudio's `open3d` has no 3.13 wheel). Job state lives in `~/.splatmaker-mcp/jobs.db` (SQLite) and `~/.splatmaker-mcp/jobs/<id>/` (work dirs).
