@@ -172,6 +172,54 @@ class SplatBackend:
             return str(exe)
         return None
 
+    _MSVC_READY = False
+
+    @staticmethod
+    def _ensure_msvc() -> bool:
+        """Make MSVC's compiler discoverable for gsplat's torch JIT build.
+
+        torch's cpp_extension ALWAYS probes the compiler (`where cl`), even
+        when loading the cached extension — without cl on PATH every
+        ns-train run fails before training starts. Runs vcvars64.bat once per
+        process (a few seconds) and merges INCLUDE/LIB/PATH into our env so
+        children (and the JIT check itself) see a working toolchain.
+        Returns True when `cl` resolves afterwards.
+        """
+        import os
+        import subprocess
+
+        if SplatBackend._MSVC_READY and shutil.which("cl"):
+            return True
+        candidates = [
+            "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat",
+            "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Auxiliary/Build/vcvars64.bat",
+        ]
+        for bat in candidates:
+            if not Path(bat).is_file():
+                continue
+            try:
+                out = subprocess.run(
+                    ["cmd", "/c", f'"{bat}" > nul & set'],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+                if out.returncode != 0:
+                    continue
+                for line in out.stdout.splitlines():
+                    if "=" not in line:
+                        continue
+                    k, _, v = line.partition("=")
+                    if k.strip() in ("INCLUDE", "LIB", "LIBPATH", "Path"):
+                        os.environ[k.strip()] = v
+                logger.info("splatmaker: imported MSVC env from %s", bat)
+                break
+            except Exception as exc:
+                logger.warning("splatmaker: vcvars import failed (%s): %s", bat, exc)
+        ok = shutil.which("cl") is not None
+        SplatBackend._MSVC_READY = ok
+        return ok
+
     @staticmethod
     def _resolve_exe(name: str) -> str | None:
         """PATH lookup first (uv run sets this correctly), then a direct
@@ -266,6 +314,10 @@ class SplatBackend:
         # (tensorboard, not the default 'viewer', deliberately - viewer opens a
         # websocket server nobody connects to in unattended runs; tensorboard
         # just logs to disk, no port/connection concerns for automation)
+        # MSVC first: gsplat's torch JIT extension probes `where cl` on EVERY
+        # load (even cache hits), so training hard-requires the compiler on
+        # PATH even though the extension is long since built.
+        SplatBackend._ensure_msvc()
         rc, _out, err = await self._run(
             [
                 exe_train,
