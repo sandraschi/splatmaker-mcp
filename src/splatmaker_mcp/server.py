@@ -184,9 +184,23 @@ class SplatBackend:
         return str(candidate) if candidate.exists() else None
 
     async def _run(self, cmd: list[str]) -> tuple[int, str, str]:
+        import os
+
+        # Force UTF-8 pipes: nerfstudio's rich progress output contains emoji
+        # and the child inherits the Windows ANSI codepage (cp1252) by default,
+        # which crashes the run with UnicodeEncodeError on the first 🎉.
+        # (Observed 2026-11-01: e2e died in stage 1 with an empty stderr-tail
+        # mystery until the real traceback surfaced.) This only affects how WE
+        # decode the child's output, not the child's behavior.
+        env = dict(os.environ)
+        env.setdefault("PYTHONUTF8", "1")
+        env.setdefault("PYTHONIOENCODING", "utf-8")
         logger.info("splatmaker subprocess: %s", " ".join(cmd))
         proc = await asyncio.create_subprocess_exec(
-            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
         )
         stdout, stderr = await proc.communicate()
         return (
