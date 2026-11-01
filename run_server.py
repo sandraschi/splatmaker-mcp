@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+# Eager imports FIRST (before any tool code): freezes the mcp bootstrap and
+# the lazy stdlib C extensions before fastmcp touches them — in a frozen
+# onefile build these fail silently later (mcp.types AttributeError,
+# _strptime ImportError). noqa'd: imported for side effect.
+import _strptime  # noqa: F401
 import os
 import sys
 from pathlib import Path
 
+import mcp.types  # noqa: F401
 import uvicorn
 
 if getattr(sys, "frozen", False):

@@ -12,11 +12,17 @@ use tauri::{AppHandle, Emitter, Manager};
 pub struct BackendProcess(pub Mutex<Option<Child>>);
 
 // -- PER-REPO: Customize these constants --
+// BACKEND_PORT is the OPERATOR port (side-by-side rule): the installed app
+// must never share the dev backend port 11091 — the operator's free_port
+// would kill the developer's backend on launch and vice versa.
 const BACKEND_NAME: &str = "splatmaker-mcp-backend.exe";
-const BACKEND_PORT: u16 = 11091;
+const BACKEND_PORT: u16 = 11259;
 const BACKEND_TAG: &str = "splatmaker-mcp-backend-x86_64-pc-windows-msvc.exe";
-const ENV_PORT: &str = "PORT";
-const ENV_HOST: &str = "HOST";
+// ENV names match what the Python entry points actually honor:
+// __main__.main() reads MCP_PORT/MCP_HOST, run_server.py reads
+// SPLATMAKER_PORT (MCP_PORT fallback) / SPLATMAKER_HOST.
+const ENV_PORT: &str = "MCP_PORT";
+const ENV_HOST: &str = "MCP_HOST";
 const ENV_TAURI: &str = "SPLATMAKER_MCP_TAURI";
 
 fn dev_backend_path() -> Option<PathBuf> {
@@ -130,8 +136,12 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
 
     log_line(
         &app,
-        &format!("spawning {} (cwd {}) on port 11091",
-            backend_path.display(), workdir.display()),
+        &format!(
+            "spawning {} (cwd {}) on port {}",
+            backend_path.display(),
+            workdir.display(),
+            BACKEND_PORT
+        ),
     );
 
     let mut command = Command::new(&backend_path);
@@ -167,7 +177,41 @@ pub fn spawn_backend(app: AppHandle, state: &BackendProcess) -> Result<String, S
         thread::spawn(move || watch_backend_stream(err, app_handle));
     }
 
-    Ok(format!("Backend starting on port 11091"))
+    // TCP health-check loop: confirm the child is actually listening.
+    // Catches silent startup crashes (frozen-import errors) that leave the
+    // process alive but deaf. Emits backend-status for the webapp listener.
+    let health_app = app.clone();
+    thread::spawn(move || {
+        use std::net::{SocketAddr, TcpStream};
+        use std::str::FromStr;
+        let addr = SocketAddr::from_str(&format!("127.0.0.1:{BACKEND_PORT}")).unwrap();
+        for attempt in 0..30 {
+            thread::sleep(Duration::from_secs(2));
+            match TcpStream::connect_timeout(&addr, Duration::from_secs(2)) {
+                Ok(_) => {
+                    log_line(
+                        &health_app,
+                        &format!("Backend health check PASSED on port {BACKEND_PORT} (attempt {})", attempt + 1),
+                    );
+                    let _ = health_app.emit("backend-status", "ready");
+                    return;
+                }
+                Err(e) => {
+                    log_line(
+                        &health_app,
+                        &format!("Backend health check: {e} (attempt {})", attempt + 1),
+                    );
+                }
+            }
+        }
+        log_line(
+            &health_app,
+            &format!("Backend health check FAILED - not listening on port {BACKEND_PORT} after 30 attempts"),
+        );
+        let _ = health_app.emit("backend-status", "error: backend not reachable");
+    });
+
+    Ok(format!("Backend starting on port {BACKEND_PORT}"))
 }
 
 fn watch_backend_stream<R: std::io::Read + Send + 'static>(stream: R, app: AppHandle) {

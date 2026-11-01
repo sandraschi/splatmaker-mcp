@@ -64,6 +64,11 @@ build-native:
 # packs via the fleet pipeline (scripts/mcpb-pack.ps1 shim).
 mcpb-pack:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}\\scripts\\mcpb-pack.ps1"
+
+# CUA-NSIS smoke: install -> launch -> verify -> uninstall (mandatory before every release)
+cua-nsis-test:
+    uv sync --group dev --extra dev
+    uv run --no-sync --group dev --extra dev python scripts/cua-smoke.py --config scripts/cua-nsis-config.json
 # Fleet depot advertise
 advertise:
     powershell.exe -NoProfile -File "D:\Dev\repos\mcp-central-docs\scripts\advertise-depot.ps1" -DepotMcpUrl "http://127.0.0.1:10727"

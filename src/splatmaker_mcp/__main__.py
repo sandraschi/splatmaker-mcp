@@ -7,8 +7,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import time
+from collections import deque
 
 import httpx
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -29,6 +32,36 @@ from splatmaker_mcp.server import (
 )
 
 OLLAMA_URL = "http://localhost:11434"
+
+# In-memory request ring (backs GET /api/v1/request-log — the ground-truth
+# oracle for "did the webview's fetch actually reach the backend", used by
+# the CUA smoke test's backend-receipt proof phase).
+_REQUEST_LOG: deque = deque(maxlen=200)
+
+
+class _RequestLogMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):  # noqa: ANN001
+        response = await call_next(request)
+        try:
+            client = request.client.host if request.client else ""
+            _REQUEST_LOG.append(
+                {
+                    "ts": time.time(),
+                    "method": request.method,
+                    "path": request.url.path,
+                    "origin": request.headers.get("origin", ""),
+                    "client": client,
+                    "status": response.status_code,
+                }
+            )
+        except Exception:
+            pass
+        return response
+
+
+async def _request_log(request):  # noqa: ANN001 - Starlette handler signature
+    return JSONResponse({"requests": list(_REQUEST_LOG)})
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -127,6 +160,7 @@ async def _capabilities(request):  # noqa: ANN001 - Starlette handler signature
                 "/api/llm/models",
                 "/api/llm/chat",
                 "/api/v1/diagnostics",
+                "/api/v1/request-log",
             ],
             "ports": {"backend": BACKEND_PORT},
         }
@@ -284,7 +318,11 @@ def build_http_app():
     starlette_app.add_route("/api/llm/models", _llm_models)
     starlette_app.add_route("/api/llm/chat", _llm_chat, methods=["POST"])
     starlette_app.add_route("/api/v1/diagnostics", _diagnostics)
+    starlette_app.add_route("/api/v1/request-log", _request_log)
     starlette_app.add_route("/api/shutdown", _shutdown, methods=["POST"])
+    # Request-log oracle must see every request: register after routes so the
+    # middleware wraps the full router.
+    starlette_app.add_middleware(_RequestLogMiddleware)
     return starlette_app
 
 

@@ -24,6 +24,7 @@ dev = [
     "pytest-cov>=5.0",
     "pyright>=1.1",
     "prefab-ui>=0.21",
+    "pyinstaller>=6.0",
     "ruff>=0.16.0,<0.17",
 ]
 engine = [
