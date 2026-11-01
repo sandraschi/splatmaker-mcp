@@ -195,11 +195,16 @@ class SplatBackend:
             "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Auxiliary/Build/vcvars64.bat",
         ]
         for bat in candidates:
+            bat = os.path.normpath(bat)
             if not Path(bat).is_file():
                 continue
             try:
+                # `call` handles quoted batch paths; a single-string
+                # `cmd /c "<bat> > nul & set"` misparses the quotes and the
+                # bat never runs (set then re-emits the UNMODIFIED env — a
+                # silent no-op; observed 2026-11-01).
                 out = subprocess.run(
-                    ["cmd", "/c", f'"{bat}" > nul & set'],
+                    ["cmd", "/c", "call", bat, ">", "nul", "&", "set"],
                     capture_output=True,
                     text=True,
                     timeout=120,
