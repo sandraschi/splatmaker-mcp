@@ -60,7 +60,10 @@ class _RequestLogMiddleware(BaseHTTPMiddleware):
 
 
 async def _request_log(request):  # noqa: ANN001 - Starlette handler signature
-    return JSONResponse({"requests": list(_REQUEST_LOG)})
+    # NOTE: the "count" key is load-bearing — the CUA backend-receipt proof
+    # reads data.get("count", 0); without it every run reports ZERO requests.
+    entries = list(_REQUEST_LOG)
+    return JSONResponse({"count": len(entries), "requests": entries})
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

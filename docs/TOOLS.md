@@ -44,7 +44,7 @@ All returns carry `success` + `message`; failures also carry `error`.
 | `GET /api/logs` | In-memory log ring (`?limit`, max 500) for the Logs page. |
 | `GET /api/llm/models` | Completion-capable local Ollama models for the Chat page. |
 | `POST /api/llm/chat` | Body `{"model", "messages": [{role, content}], "system"?}` → Ollama `/api/chat` (non-streaming). 502 when Ollama is down. |
-| `GET /api/v1/request-log` | In-memory ring (method, path, origin, client, timestamp, status) — ground-truth oracle for CUA backend-receipt proof. |
+| `GET /api/v1/request-log` | In-memory ring (method, path, origin, client, timestamp, status) + `count` — ground-truth oracle for CUA backend-receipt proof. |
 | `POST /api/shutdown` | Orderly exit (responds 200, exits ~500ms later). |
 
 ## Downstream note (load-bearing)
