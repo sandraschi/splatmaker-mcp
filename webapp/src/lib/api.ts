@@ -1,7 +1,9 @@
 // Same-origin by default (vite proxy forwards /api and /mcp to :11091).
 // Absolute backend URL ONLY inside the Tauri WebView, where same-origin is
-// the app bundle itself. A hardcoded absolute URL in a real browser tab breaks
-// on any non-localhost hostname (LAN name, Tailscale MagicDNS, goliath).
+// the app bundle itself — and there it MUST be the operator port 11259
+// (side-by-side rule: the installed app never shares the dev backend port).
+// A hardcoded absolute URL in a real browser tab breaks on any non-localhost
+// hostname (LAN name, Tailscale MagicDNS, goliath).
 declare global {
 	interface Window {
 		__TAURI__?: unknown;
@@ -11,7 +13,7 @@ declare global {
 const IN_TAURI =
 	typeof window !== "undefined" &&
 	("__TAURI__" in window || "__TAURI_INTERNALS__" in window);
-export const API_BASE = IN_TAURI ? "http://127.0.0.1:11091" : "";
+export const API_BASE = IN_TAURI ? "http://127.0.0.1:11259" : "";
 
 export interface Health {
 	status: string;

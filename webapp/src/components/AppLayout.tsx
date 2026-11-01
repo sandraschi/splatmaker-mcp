@@ -13,6 +13,7 @@ import {
 	Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useZoom } from "../lib/use-zoom";
 
 const nav = [
 	{ to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +31,7 @@ const nav = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
 	const loc = useLocation();
+	useZoom();
 	return (
 		<div className="min-h-screen bg-zinc-950 text-zinc-100 flex">
 			<aside className="w-56 border-r border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-4">
