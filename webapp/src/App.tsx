@@ -1,26 +1,16 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
+import { Chat } from "./pages/chat";
 import { Dashboard } from "./pages/dashboard";
+import { Gallery } from "./pages/gallery";
 import { Generate } from "./pages/generate";
+import { Help } from "./pages/help";
+import { Inbox } from "./pages/inbox";
 import { Jobs } from "./pages/jobs";
-
-function Gallery() {
-	return (
-		<div data-testid="gallery-page" className="p-4 text-sm text-zinc-300">
-			Gallery — job PLYs land in{" "}
-			<code>~/.splatmaker-mcp/jobs/&lt;id&gt;/export/*.ply</code>. Wire Spark
-			viewer later.
-		</div>
-	);
-}
-function Settings() {
-	return (
-		<div data-testid="settings-page" className="p-4 text-sm text-zinc-300">
-			Settings — engine: Nerfstudio, 15k iters. Override via{" "}
-			<code>SPLATMAKER_MAX_ITERATIONS</code>. No API key needed (self-hosted).
-		</div>
-	);
-}
+import { Logs } from "./pages/logs";
+import { Settings } from "./pages/settings";
+import { Skills } from "./pages/skills";
+import { Tools } from "./pages/tools";
 
 export default function App() {
 	return (
@@ -30,7 +20,13 @@ export default function App() {
 					<Route path="/" element={<Dashboard />} />
 					<Route path="/generate" element={<Generate />} />
 					<Route path="/jobs" element={<Jobs />} />
+					<Route path="/inbox" element={<Inbox />} />
 					<Route path="/gallery" element={<Gallery />} />
+					<Route path="/tools" element={<Tools />} />
+					<Route path="/skills" element={<Skills />} />
+					<Route path="/chat" element={<Chat />} />
+					<Route path="/logs" element={<Logs />} />
+					<Route path="/help" element={<Help />} />
 					<Route path="/settings" element={<Settings />} />
 				</Routes>
 			</AppLayout>

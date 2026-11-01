@@ -1,17 +1,23 @@
 import { Cpu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import type { Status } from "../lib/api";
 import { api } from "../lib/api";
 import { useAppStore } from "../lib/store";
 
 export function Dashboard() {
 	const { health, checkHealth } = useAppStore();
 	const [jobs, setJobs] = useState<number>(0);
+	const [status, setStatus] = useState<Status | null>(null);
 	useEffect(() => {
 		checkHealth();
 		api
 			.jobs()
 			.then((r) => setJobs(r.jobs.length))
+			.catch(() => null);
+		api
+			.status()
+			.then(setStatus)
 			.catch(() => null);
 	}, [checkHealth]);
 	return (
@@ -77,6 +83,20 @@ export function Dashboard() {
 				Zero marginal cost — local 4090. Multi-dir images now auto-staged.
 				Compare to Platform 1500cr/gen.
 			</div>
+			{status && status.engine_verified !== "ok" && (
+				<div
+					data-testid="engine-warning"
+					className="rounded border border-red-900 bg-red-950/20 p-4 text-sm text-red-200"
+				>
+					Engine {status.engine_verified}
+					{status.engine_version && ` (${status.engine_version})`}
+					{status.engine_error && `: ${status.engine_error}`} —{" "}
+					<Link to="/help" className="text-amber-200">
+						see Help for install & repair
+					</Link>
+					.
+				</div>
+			)}
 		</div>
 	);
 }

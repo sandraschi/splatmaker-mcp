@@ -1,10 +1,16 @@
 import {
 	Box,
+	CircleHelp,
 	Image,
+	Inbox as InboxIcon,
 	LayoutDashboard,
 	ListTree,
+	MessageSquare,
 	Radio,
+	ScrollText,
 	Settings,
+	Sparkles,
+	Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -12,7 +18,13 @@ const nav = [
 	{ to: "/", label: "Dashboard", icon: LayoutDashboard },
 	{ to: "/generate", label: "Generate", icon: Box },
 	{ to: "/jobs", label: "Jobs", icon: ListTree },
+	{ to: "/inbox", label: "Inbox", icon: InboxIcon },
 	{ to: "/gallery", label: "Gallery", icon: Image },
+	{ to: "/tools", label: "Tools", icon: Wrench },
+	{ to: "/skills", label: "Skills", icon: Sparkles },
+	{ to: "/chat", label: "Chat", icon: MessageSquare },
+	{ to: "/logs", label: "Logs", icon: ScrollText },
+	{ to: "/help", label: "Help", icon: CircleHelp },
 	{ to: "/settings", label: "Settings", icon: Settings },
 ];
 
