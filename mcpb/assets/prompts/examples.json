@@ -1,0 +1,936 @@
+[
+ {
+  "name": "from-video-happy-01",
+  "description": "Start a splat job from video D:/cap/walk.mp4",
+  "prompt": "Make a splat from my video at D:/cap/walk.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/walk.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-02",
+  "description": "Start a splat job from video D:/cap/living-room.mp4",
+  "prompt": "Make a splat from my video at D:/cap/living-room.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/living-room.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-03",
+  "description": "Start a splat job from video D:/cap/garden-west.MOV",
+  "prompt": "Make a splat from my video at D:/cap/garden-west.MOV",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/garden-west.MOV"
+  }
+ },
+ {
+  "name": "from-video-happy-04",
+  "description": "Start a splat job from video D:/cap/hallway.mp4",
+  "prompt": "Make a splat from my video at D:/cap/hallway.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/hallway.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-05",
+  "description": "Start a splat job from video D:/Videos/kitchen-tour.mp4",
+  "prompt": "Make a splat from my video at D:/Videos/kitchen-tour.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/Videos/kitchen-tour.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-06",
+  "description": "Start a splat job from video D:/cap/stairs.mp4",
+  "prompt": "Make a splat from my video at D:/cap/stairs.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/stairs.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-07",
+  "description": "Start a splat job from video D:/cap/conservatory.mp4",
+  "prompt": "Make a splat from my video at D:/cap/conservatory.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/conservatory.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-08",
+  "description": "Start a splat job from video D:/cap/garage.mp4",
+  "prompt": "Make a splat from my video at D:/cap/garage.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/garage.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-09",
+  "description": "Start a splat job from video D:/cap/bedroom.mp4",
+  "prompt": "Make a splat from my video at D:/cap/bedroom.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/bedroom.mp4"
+  }
+ },
+ {
+  "name": "from-video-happy-10",
+  "description": "Start a splat job from video D:/cap/office.mp4",
+  "prompt": "Make a splat from my video at D:/cap/office.mp4",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video",
+   "video_path": "D:/cap/office.mp4"
+  }
+ },
+ {
+  "name": "from-video-error-01",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job but forget the path",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-video-error-02",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video"
+  }
+ },
+ {
+  "name": "from-video-error-03",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job",
+  "tool": "splat_generate",
+  "arguments": {
+   "video_path": "D:/cap/walk.mp4"
+  }
+ },
+ {
+  "name": "from-video-error-04",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job but forget the path",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-video-error-05",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video"
+  }
+ },
+ {
+  "name": "from-video-error-06",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job",
+  "tool": "splat_generate",
+  "arguments": {
+   "video_path": "D:/cap/walk.mp4"
+  }
+ },
+ {
+  "name": "from-video-error-07",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job but forget the path",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-video-error-08",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_video"
+  }
+ },
+ {
+  "name": "from-video-error-09",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job",
+  "tool": "splat_generate",
+  "arguments": {
+   "video_path": "D:/cap/walk.mp4"
+  }
+ },
+ {
+  "name": "from-video-error-10",
+  "description": "from_video with missing/invalid arguments (must fail with error)",
+  "prompt": "Start a video job but forget the path",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-images-happy-01",
+  "description": "Start a splat job from 3 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/a/001.jpg, D:/cap/a/002.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/a/001.jpg",
+    "D:/cap/a/002.jpg",
+    "D:/cap/a/003.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-02",
+  "description": "Start a splat job from 2 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/room/001.jpg, D:/cap/room/002.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/room/001.jpg",
+    "D:/cap/room/002.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-03",
+  "description": "Start a splat job from 3 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/x/1.jpg, D:/cap/y/2.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/x/1.jpg",
+    "D:/cap/y/2.jpg",
+    "D:/cap/z/3.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-04",
+  "description": "Start a splat job from 8 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/big/001.jpg, D:/cap/big/002.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/big/001.jpg",
+    "D:/cap/big/002.jpg",
+    "D:/cap/big/003.jpg",
+    "D:/cap/big/004.jpg",
+    "D:/cap/big/005.jpg",
+    "D:/cap/big/006.jpg",
+    "D:/cap/big/007.jpg",
+    "D:/cap/big/008.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-05",
+  "description": "Start a splat job from 2 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/odd/1.png, D:/cap/odd/2.png...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/odd/1.png",
+    "D:/cap/odd/2.png"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-06",
+  "description": "Start a splat job from 3 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/porch/a.jpg, D:/cap/porch/b.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/porch/a.jpg",
+    "D:/cap/porch/b.jpg",
+    "D:/cap/porch/c.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-07",
+  "description": "Start a splat job from 1 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/loft/01.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/loft/01.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-08",
+  "description": "Start a splat job from 3 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/cellar/01.jpg, D:/cap/cellar/02.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/cellar/01.jpg",
+    "D:/cap/cellar/02.jpg",
+    "D:/cap/cellar/03.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-09",
+  "description": "Start a splat job from 2 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/studio/1.jpg, D:/cap/studio/2.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/studio/1.jpg",
+    "D:/cap/studio/2.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-happy-10",
+  "description": "Start a splat job from 3 image(s)",
+  "prompt": "Make a splat from these photos: D:/cap/deck/d1.jpg, D:/cap/deck/d2.jpg...",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images",
+   "image_paths": [
+    "D:/cap/deck/d1.jpg",
+    "D:/cap/deck/d2.jpg",
+    "D:/cap/deck/d3.jpg"
+   ]
+  }
+ },
+ {
+  "name": "from-images-error-01",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-images-error-02",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images"
+  }
+ },
+ {
+  "name": "from-images-error-03",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {
+   "image_paths": []
+  }
+ },
+ {
+  "name": "from-images-error-04",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-images-error-05",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images"
+  }
+ },
+ {
+  "name": "from-images-error-06",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {
+   "image_paths": []
+  }
+ },
+ {
+  "name": "from-images-error-07",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "from-images-error-08",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "from_images"
+  }
+ },
+ {
+  "name": "from-images-error-09",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {
+   "image_paths": []
+  }
+ },
+ {
+  "name": "from-images-error-10",
+  "description": "from_images with missing/empty arguments (must fail with error)",
+  "prompt": "Start an images job with no photos",
+  "tool": "splat_generate",
+  "arguments": {}
+ },
+ {
+  "name": "status-poll-01",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "ca88b454-1d87-4e77-a226-2530bb5afa79"
+  }
+ },
+ {
+  "name": "status-poll-02",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "9e54344f-757a-4fd4-8c4c-654b66c59e82"
+  }
+ },
+ {
+  "name": "status-poll-03",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "88c4253e-24ef-4cfc-855f-b6858271cb67"
+  }
+ },
+ {
+  "name": "status-poll-04",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "1977c7d8-336d-404a-b029-2ac38875bc74"
+  }
+ },
+ {
+  "name": "status-poll-05",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "67a67747-7857-4353-8edd-b0e0eac6ed65"
+  }
+ },
+ {
+  "name": "status-poll-06",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "20ae9d2f-7ff2-4db8-baea-879b2b30dc7d"
+  }
+ },
+ {
+  "name": "status-poll-07",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "a97fdad9-58c8-4955-b6ad-ded7e57b9a8e"
+  }
+ },
+ {
+  "name": "status-poll-08",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "c0bf25a7-fd0e-4158-9892-4ed78551dfdc"
+  }
+ },
+ {
+  "name": "status-poll-09",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "b3e237e7-7a56-44dc-a4c9-b1e295cdf0b5"
+  }
+ },
+ {
+  "name": "status-poll-10",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "68e27d5a-2ea3-4659-aa4b-3a026e774961"
+  }
+ },
+ {
+  "name": "status-poll-11",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "a9ad5626-3a43-4321-9727-afda8e8c33d2"
+  }
+ },
+ {
+  "name": "status-poll-12",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "f242406e-6ee3-4a06-848e-04e4b06bc769"
+  }
+ },
+ {
+  "name": "status-poll-13",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "172fb8c3-c94a-4ae2-8054-f4c637e30503"
+  }
+ },
+ {
+  "name": "status-poll-14",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "bd03a90a-bedd-40d2-beaf-62f102c88992"
+  }
+ },
+ {
+  "name": "status-poll-15",
+  "description": "Poll a job's status by id",
+  "prompt": "Is my splat job done yet?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "status",
+   "job_id": "942819e4-7aa5-4c3a-b40a-11e1a10a6495"
+  }
+ },
+ {
+  "name": "list-jobs-01",
+  "description": "List all tracked jobs",
+  "prompt": "Show me all my splat jobs",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-02",
+  "description": "List all tracked jobs",
+  "prompt": "What jobs are tracked?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-03",
+  "description": "List all tracked jobs",
+  "prompt": "Show me all my splat jobs",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-04",
+  "description": "List all tracked jobs",
+  "prompt": "What jobs are tracked?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-05",
+  "description": "List all tracked jobs",
+  "prompt": "Show me all my splat jobs",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-06",
+  "description": "List all tracked jobs",
+  "prompt": "What jobs are tracked?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-07",
+  "description": "List all tracked jobs",
+  "prompt": "Show me all my splat jobs",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-08",
+  "description": "List all tracked jobs",
+  "prompt": "What jobs are tracked?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-09",
+  "description": "List all tracked jobs",
+  "prompt": "Show me all my splat jobs",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "list-jobs-10",
+  "description": "List all tracked jobs",
+  "prompt": "What jobs are tracked?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "list"
+  }
+ },
+ {
+  "name": "get-asset-01",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "8cef5da4-ca70-4341-96cf-65e374522969"
+  }
+ },
+ {
+  "name": "get-asset-02",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "40d0ac33-e29b-467e-bb8a-6c0eabb93de0"
+  }
+ },
+ {
+  "name": "get-asset-03",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "ec8bedd8-dc02-409a-8882-9db620e8f67f"
+  }
+ },
+ {
+  "name": "get-asset-04",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "c0fec45e-b389-45c5-8f78-779adfd270e0"
+  }
+ },
+ {
+  "name": "get-asset-05",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "aa74d7e2-1e1a-4793-a5b6-b0c570ee7e59"
+  }
+ },
+ {
+  "name": "get-asset-06",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "47a472ba-b582-4f6e-93aa-e2bec906e52b"
+  }
+ },
+ {
+  "name": "get-asset-07",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "44bc9dda-f950-4d0d-a383-c3a42ecb844f"
+  }
+ },
+ {
+  "name": "get-asset-08",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "3d2d7b98-7549-485b-a4fa-1948df77a94d"
+  }
+ },
+ {
+  "name": "get-asset-09",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "80c15a45-3f42-4bac-9b3e-1fffb65d5a2f"
+  }
+ },
+ {
+  "name": "get-asset-10",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "53d4b308-7186-46c4-afd3-2d15a800972d"
+  }
+ },
+ {
+  "name": "get-asset-11",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "3168a60d-acc8-48ae-8d7d-e0965b78c619"
+  }
+ },
+ {
+  "name": "get-asset-12",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "bd1d3ee3-b8cb-4ea0-b7d9-94a6e0ba3563"
+  }
+ },
+ {
+  "name": "get-asset-13",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "3b96ada9-ef9c-4c87-8b15-a340fff9223b"
+  }
+ },
+ {
+  "name": "get-asset-14",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "3f768309-c245-47c4-a3b2-59d3c0bc6226"
+  }
+ },
+ {
+  "name": "get-asset-15",
+  "description": "Fetch asset paths for a finished job",
+  "prompt": "Where is the finished .ply file?",
+  "tool": "splat_generate",
+  "arguments": {
+   "operation": "get_asset",
+   "job_id": "80446109-01e1-47b5-8755-050875065147"
+  }
+ },
+ {
+  "name": "engine-status-01",
+  "description": "Report engine install + verification state",
+  "prompt": "Is the Nerfstudio engine healthy?",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-02",
+  "description": "Report engine install + verification state",
+  "prompt": "Check the splat engine",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-03",
+  "description": "Report engine install + verification state",
+  "prompt": "Is the Nerfstudio engine healthy?",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-04",
+  "description": "Report engine install + verification state",
+  "prompt": "Check the splat engine",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-05",
+  "description": "Report engine install + verification state",
+  "prompt": "Is the Nerfstudio engine healthy?",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-06",
+  "description": "Report engine install + verification state",
+  "prompt": "Check the splat engine",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-07",
+  "description": "Report engine install + verification state",
+  "prompt": "Is the Nerfstudio engine healthy?",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "engine-status-08",
+  "description": "Report engine install + verification state",
+  "prompt": "Check the splat engine",
+  "tool": "splat_engine_status",
+  "arguments": {}
+ },
+ {
+  "name": "shutdown-confirm",
+  "description": "Gracefully stop the server (explicit user request only)",
+  "prompt": "Shut down the splatmaker server",
+  "tool": "server_shutdown",
+  "arguments": {}
+ },
+ {
+  "name": "shutdown-restart-flow",
+  "description": "Stop the server before a backend restart",
+  "prompt": "Restart the backend for the engine repair",
+  "tool": "server_shutdown",
+  "arguments": {}
+ },
+ {
+  "name": "shutdown-never-cleanup",
+  "description": "Negative example: never shut down as job cleanup (jobs are rows, not processes)",
+  "prompt": "A job failed, restart the server to fix it",
+  "tool": "server_shutdown",
+  "arguments": {}
+ },
+ {
+  "name": "shutdown-never-stuck",
+  "description": "Negative example: never shut down for a stuck job (diagnose the row instead)",
+  "prompt": "The job is stuck, kill the server",
+  "tool": "server_shutdown",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-01",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "How is splatmaker doing?",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-02",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "Show me the status card",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-03",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "How is splatmaker doing?",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-04",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "Show me the status card",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-05",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "How is splatmaker doing?",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-06",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "Show me the status card",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-07",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "How is splatmaker doing?",
+  "tool": "show_status_card",
+  "arguments": {}
+ },
+ {
+  "name": "status-card-08",
+  "description": "Engine + queue status as a rich Prefab card",
+  "prompt": "Show me the status card",
+  "tool": "show_status_card",
+  "arguments": {}
+ }
+]
