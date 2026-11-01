@@ -1,0 +1,14 @@
+# MCPB bundle exclusions — never ship venvs, webapps, native builds, tests, data, or backups
+.venv/
+node_modules/
+webapp/
+src-tauri/
+tests/
+data/
+target/
+*.bak
+*.bak.*
+.env
+reports/
+logs/
+docs/assess-reports/

@@ -1,0 +1,39 @@
+{
+	"manifest_version": "0.2",
+	"name": "splatmaker-mcp",
+	"version": "0.3.0",
+	"description": "Self-hosted, zero-marginal-cost Gaussian-splat generation. FOSS alternative to paid splat APIs - point at a video or images, get a navigable 3D world, computed on local hardware (Nerfstudio/Splatfacto).",
+	"author": {
+		"name": "Sandra Schipal"
+	},
+	"server": {
+		"type": "python",
+		"entry_point": "src/splatmaker_mcp/__main__.py",
+		"mcp_config": {
+			"command": "uv",
+			"args": ["run", "--project", "${__dirname}", "python", "-m", "splatmaker_mcp"],
+			"env": {
+				"PYTHONPATH": "${__dirname}/src",
+				"PYTHONUNBUFFERED": "1"
+			}
+		}
+	},
+	"tools": [
+		{
+			"name": "splat_generate",
+			"description": "Generate or inspect a Gaussian-splat world: from_video, from_images, status, list, get_asset"
+		},
+		{
+			"name": "splat_engine_status",
+			"description": "Report engine install state plus cached ns-train --help verification (verified ok/broken/missing/pending)"
+		},
+		{
+			"name": "server_shutdown",
+			"description": "Gracefully shut down this server (explicit user request only)"
+		},
+		{
+			"name": "show_status_card",
+			"description": "Engine + job-queue status as a rich Prefab card"
+		}
+	]
+}

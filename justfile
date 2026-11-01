@@ -60,10 +60,10 @@ gates:
 build-native:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}\\src-tauri\\build.ps1"
 
-# MCPB packaging — honest guard: no compliant manifest exists yet (issue #1),
-# so this fails loudly rather than shipping a runt bundle.
+# MCPB packaging — validates 3-4-100 prompts, fresh-copies src/ -> mcpb/src/,
+# packs via the fleet pipeline (scripts/mcpb-pack.ps1 shim).
 mcpb-pack:
-    powershell.exe -NoProfile -File "D:\\Dev\\repos\\mcp-central-docs\\scripts\\audit-mcpb-bundles.ps1" -Repo splatmaker-mcp
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{justfile_directory()}}\\scripts\\mcpb-pack.ps1"
 # Fleet depot advertise
 advertise:
     powershell.exe -NoProfile -File "D:\Dev\repos\mcp-central-docs\scripts\advertise-depot.ps1" -DepotMcpUrl "http://127.0.0.1:10727"
