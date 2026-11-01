@@ -70,7 +70,7 @@ def _error_response(message: str, error: str | None = None) -> dict:
 
 
 SERVER_ID = "splatmaker-mcp"
-SERVER_VERSION = "0.2.0"
+SERVER_VERSION = "0.3.0"
 BACKEND_PORT = 11091
 FRONTEND_PORT = 11092
 HUB_REGISTER_URL = "http://localhost:10857/api/v1/register"

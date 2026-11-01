@@ -2,7 +2,7 @@
 
 Self-hosted, zero-marginal-cost Gaussian-splat generation. FOSS alternative to worldlabs-mcp's Marble API - point at a video or images, get a navigable 3D Gaussian-splat world, runs entirely on local GPU.
 
-Status: v0.2.0, Nerfstudio/Splatfacto engine implemented. Server shell, tools, job tracking (SQLite), fleet health/registration contract, webapp skeleton, and the real subprocess pipeline are working. No full end-to-end training run against real capture data yet (needs Sandra's own photos/video).
+Status: v0.3.0, Nerfstudio/Splatfacto engine implemented and verified (`ns-train --help` exit 0, nerfstudio 1.1.4). Server shell, 4 tools + prompt + resource + Prefab card, job tracking (SQLite), fleet health/registration contract, 11-page webapp (Tools/Skills/Chat/Logs/Inbox/Gallery/Help/Settings), local-Ollama chat, engine-truth probe. No full end-to-end training run against real capture data yet (needs Sandra's own photos/video).
 
 Full reference: llms-full.txt
 

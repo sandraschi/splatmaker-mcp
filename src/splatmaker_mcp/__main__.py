@@ -293,10 +293,23 @@ def main() -> None:
     parser.add_argument(
         "--http", action="store_true", help="Run streamable HTTP transport instead of stdio"
     )
-    parser.add_argument("--port", type=int, default=BACKEND_PORT)
+    parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()
 
-    if args.http:
+    import os
+
+    # Env honors fleet convention (MCP_TRANSPORT/MCP_PORT) so launchers, the
+    # MCPB bundle check, and start.ps1 can select transport/port without flags.
+    # run_server.py already sets MCP_TRANSPORT=http; the default stays stdio.
+    use_http = args.http or os.environ.get("MCP_TRANSPORT") == "http"
+    port = args.port
+    if port is None:
+        try:
+            port = int(os.environ.get("MCP_PORT", str(BACKEND_PORT)))
+        except ValueError:
+            port = BACKEND_PORT
+
+    if use_http:
         import uvicorn
 
         # Registration run synchronously before uvicorn takes over rather than
@@ -307,7 +320,7 @@ def main() -> None:
         asyncio.run(_register_with_hub())
 
         app = build_http_app()
-        uvicorn.run(app, host="127.0.0.1", port=args.port)
+        uvicorn.run(app, host="127.0.0.1", port=port)
     else:
         mcp.run()  # stdio transport
 

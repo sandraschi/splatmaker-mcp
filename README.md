@@ -2,7 +2,7 @@
 
 **Self-hosted, zero-marginal-cost Gaussian-splat generation.** The FOSS alternative to worldlabs-mcp's Marble API — point it at a video or a set of images, get a navigable 3D Gaussian-splat world back, run entirely on local hardware (RTX 4090).
 
-**Status: v0.2.0, engine implemented.** Server shell, tool schemas, job tracking, fleet health/registration contract, webapp skeleton, AND the real Nerfstudio/Splatfacto subprocess pipeline are all real and working. `uv sync --extra engine` installs torch+CUDA/nerfstudio/gsplat (verified on Goliath 2026-07-13: torch 2.6.0+cu124, CUDA true, RTX 4090 detected, gsplat 1.0.0). What's genuinely still pending: a full end-to-end training run against real capture data — nerfstudio's own Google Drive-hosted demo datasets are currently blocked by an external permission/quota issue on Google's end (not our code, tried two different capture names, same failure both times), so mechanical CLI/pipeline verification (flags checked against real `--help` output, executables confirmed present, control flow unit-tested, 8/8 passing) is done, but a real photorealistic splat hasn't been produced yet. That was always the plan anyway — needs Sandra's own real photos/video, same "get real reference material before writing the wrapper" discipline as vcv-rack-mcp's reference patches and Boomy's Leash's ARKit survey.
+**Status: v0.3.0, engine implemented AND verified.** Server shell, tool schemas, job tracking, fleet health/registration contract, 11-page webapp, AND the real Nerfstudio/Splatfacto subprocess pipeline are all real and working — `ns-train --help` exits 0 (nerfstudio 1.1.4, verified 2026-11-01; earlier that day the CLI was broken by missing deps and the status check lied — now the server proves it with a cached `--help` probe). `uv sync --extra engine` installs torch+CUDA/nerfstudio/gsplat (verified on Goliath 2026-07-13: torch 2.6.0+cu124, CUDA true, RTX 4090 detected, gsplat 1.0.0). What's genuinely still pending: a full end-to-end training run against real capture data — nerfstudio's own Google Drive-hosted demo datasets are currently blocked by an external permission/quota issue on Google's end (not our code, tried two different capture names, same failure both times), so mechanical CLI/pipeline verification (flags checked against real `--help` output, executables confirmed present, control flow unit-tested, 8/8 passing) is done, but a real photorealistic splat hasn't been produced yet. That was always the plan anyway — needs Sandra's own real photos/video, same "get real reference material before writing the wrapper" discipline as vcv-rack-mcp's reference patches and Boomy's Leash's ARKit survey.
 
 ## Why this exists
 
@@ -95,6 +95,12 @@ Sub-documents: `INSTALL.md`, `CHANGELOG.md`, `llms-full.txt`,
 ## Quick start
 
 See `INSTALL.md`. Short version: `uv sync`, then `uv run splatmaker-mcp` (stdio) or `uv run splatmaker-mcp --http` (HTTP on :11091).
+
+Claude Desktop one-liner (installs the latest `.mcpb` release bundle):
+
+```powershell
+irm https://github.com/sandraschi/splatmaker-mcp/releases/latest/download/install.ps1 | iex
+```
 
 ## Roadmap
 
