@@ -173,6 +173,21 @@ if (Test-Path $mcpClients) {
 Write-Host "-> [4/5] Tauri NSIS bundle..." -ForegroundColor Yellow
 Push-Location $PSScriptRoot
 $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+# MSVC link.exe must be on PATH for the Rust linker - import the VS env
+# (tauri build fails with "linker `link.exe` not found" without this).
+$vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+if (-not (Test-Path $vcvars)) {
+    $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+}
+if (Test-Path $vcvars) {
+    cmd /c "`"$vcvars`" > nul & set" | Where-Object { $_ -match '^(INCLUDE|LIB|LIBPATH|Path|VCToolsVersion|WindowsSdkDir|UniversalCRTSdkDir|UCRTVersion)=' } | ForEach-Object {
+        $parts = $_.Split('=', 2)
+        Set-Item -Path "env:$($parts[0])" -Value $parts[1]
+    }
+    Write-Host "  MSVC env imported" -ForegroundColor Gray
+} else {
+    Write-Host "  WARNING: vcvars64.bat not found - link.exe may be missing" -ForegroundColor DarkYellow
+}
 npx @tauri-apps/cli build --bundles nsis
 if ($LASTEXITCODE -ne 0) { throw "Tauri build failed with exit code $LASTEXITCODE" }
 Pop-Location

@@ -16,6 +16,7 @@ boot_err.log
 
 # assess + packaging artifacts (regenerable, never commit)
 /reports/
+cua-reports/
 *.mcpb
 mcpb/src/
 native/target/

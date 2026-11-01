@@ -2,7 +2,7 @@
 # ruff: noqa: S310  (urlopen is only used for loopback health/diagnostics URLs built from config)
 """CUA smoke test for NSIS-installed fleet apps (pywinauto-mcp canary).
 
-CUA_SMOKE_VERSION = 15  (v15: writes cua-reports/cua-result.json for the release gate; v14: nav pages are discovered from the sidebar, not configured; the phase can fail)
+CUA_SMOKE_VERSION = 16  (v16: nav discovery retries the sidebar scan 3x over 15s for the maximize/layout UIA race; v15: writes cua-reports/cua-result.json for the release gate; v14: nav pages are discovered from the sidebar, not configured; the phase can fail)
 If this file differs from templates/tauri-native/scripts/cua-smoke.py in
 mcp-central-docs, copy the template over - version number will have changed.
 
@@ -62,7 +62,7 @@ def load_config(path: str | None = None) -> dict:
     return {k: _expand(v) for k, v in cfg.items()}
 
 
-CUA_SMOKE_VERSION = 15  # bump when template changes; see docstring
+CUA_SMOKE_VERSION = 16  # bump when template changes; see docstring
 
 
 def _check_version():
@@ -621,7 +621,19 @@ def nav_click_through(output_dir: str):
     import pywinauto
 
     w = pywinauto.Application(backend="uia").connect(handle=handle).window(handle=handle)
-    labels = [label for label, _el in _sidebar_links(w)]
+    # Settle + retry: the scan runs right after maximize, and a WebView2 UIA
+    # tree mid-re-layout reports every link invisible/unnamed (observed
+    # 2026-11-01 on splatmaker-mcp: 0 links found, same binary passed twice
+    # before and after — app renders fine, the scan was just early).
+    labels: list = []
+    for attempt in range(1, 4):
+        time.sleep(5)
+        labels = [label for label, _el in _sidebar_links(w)]
+        if labels:
+            if attempt > 1:
+                log(f"Sidebar discovered on attempt {attempt} (UIA settle race, not an app bug)")
+            break
+        log(f"Sidebar scan attempt {attempt}: no links yet, waiting for the UIA tree to settle")
     if not labels:
         phase_fail(
             "no sidebar links discovered (icon-only collapsed sidebar, or nav is not <a> links)"
