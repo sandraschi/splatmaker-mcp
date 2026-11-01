@@ -1,5 +1,13 @@
 # CHANGELOG (latest release only - see git log for full history)
 
+## Unreleased — assfix 2026-11-01
+
+- Webapp: added `@tauri-apps/api ^2.2.0` dependency (checklist 1H gate — was the single HIGH blocking the native row; `bun install` + `tsc` + `biome:ci` re-proven green).
+- Tests: SQLite job-store isolation — `SPLATMAKER_JOBS_DB` env override plus `tests/conftest.py` bootstrap and a per-test tmp fixture, so pytest no longer writes failed-job rows to the real `~/.splatmaker-mcp/jobs.db` (M36 closed; proven: real DB mtime untouched by a full run).
+- Testing: `pytest-cov` in dev extras with `--cov-fail-under=40` enforced (51% measured, 8/8 passing).
+- Error handling: shared `_error_response()` helper with `logger.exception` auto-logging (TOOL_DESIGN_STANDARDS.md §7.1 Pattern 3; M14 closed).
+- justfile: `gates` aggregate (ruff + format-check + pytest + tsc + biome), `build-native` (Tauri NSIS via `src-tauri/build.ps1`), honest `mcpb-pack` guard (runs the fleet MCPB audit; fails loudly while issue #1 has no compliant manifest), `bootstrap` now also installs webapp deps (`bun install --frozen-lockfile`; L10 closed).
+
 ## 0.2.0 — 2026-07-13
 
 Engine decided and implemented: Nerfstudio/Splatfacto (gsplat as rasterization backend). Real `SplatBackend`: `ns-process-data` → `ns-train splatfacto` → `ns-export gaussian-splat` subprocess pipeline, all flags verified against actual `--help` output (not guessed). Background async job execution — tool calls return immediately with a job_id rather than blocking on real multi-minute training runs; poll with `operation=status`.

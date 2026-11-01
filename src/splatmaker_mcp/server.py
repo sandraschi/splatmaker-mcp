@@ -37,6 +37,18 @@ from fastmcp.tools.tool import ToolAnnotations
 
 logger = logging.getLogger("splatmaker_mcp")
 
+
+def _error_response(message: str, error: str | None = None) -> dict:
+    """Shared error shape with auto-logging (TOOL_DESIGN_STANDARDS.md §7.1 Pattern 3).
+
+    Always logs the traceback via logger.exception so the failure is visible
+    in server logs, and returns the fleet dialogic shape (success + message,
+    error key kept for backward compatibility).
+    """
+    logger.exception("splatmaker error: %s", message)
+    return {"success": False, "error": error or message, "message": message}
+
+
 SERVER_ID = "splatmaker-mcp"
 SERVER_VERSION = "0.2.0"
 BACKEND_PORT = 11091
@@ -253,11 +265,25 @@ backend = SplatBackend(
 # Job tracking — SQLite-backed (fast win 2026-09-01), in-memory dict is cache
 # ---------------------------------------------------------------------------
 
-_DB_PATH = Path.home() / ".splatmaker-mcp" / "jobs.db"
+
+def _resolve_db_path() -> Path:
+    """Job store location — honors SPLATMAKER_JOBS_DB so tests can isolate
+    to a tmp file instead of writing the real ~/.splatmaker-mcp/jobs.db
+    (M36: pytest previously polluted the real store with failed test rows)."""
+    import os
+
+    override = os.environ.get("SPLATMAKER_JOBS_DB")
+    if override:
+        return Path(override)
+    return Path.home() / ".splatmaker-mcp" / "jobs.db"
+
+
+_DB_PATH = _resolve_db_path()
 _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 def _db() -> _sqlite.Connection:
+    _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = _sqlite.connect(str(_DB_PATH))
     con.execute(
         "CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, kind TEXT, status TEXT, created_at REAL, message TEXT, asset_paths TEXT)"

@@ -8,6 +8,7 @@ All configuration is via environment variables (see `.env.example` — copy to `
 | `SPLATMAKER_HOST` | `127.0.0.1` | HTTP bind host (`run_server.py` / Tauri sidecar). |
 | `SPLATMAKER_PORT` | `11091` | HTTP bind port. `MCP_PORT` is honored as a fallback. Fleet registry pair is 11091 backend / 11092 frontend. |
 | `SPLATMAKER_LOG_LEVEL` | `info` | uvicorn log level for the sidecar. |
+| `SPLATMAKER_JOBS_DB` | `~/.splatmaker-mcp/jobs.db` | SQLite job-store override (tests set this to a tmp file; set it manually to relocate the store). |
 
 Engine install (one time, sizeable ~276 packages, torch+CUDA/nerfstudio/gsplat):
 

@@ -12,7 +12,18 @@ import asyncio
 
 import pytest
 
+import splatmaker_mcp.server as srv
 from splatmaker_mcp.server import backend, health_payload, splat_engine_status, splat_generate
+
+
+@pytest.fixture(autouse=True)
+def _isolated_job_store(monkeypatch, tmp_path):
+    """M36: isolate the SQLite job store to a tmp file so pytest never
+    writes failed-job rows to the real ~/.splatmaker-mcp/jobs.db."""
+    monkeypatch.setattr(srv, "_DB_PATH", tmp_path / "jobs.db")
+    srv._jobs.clear()
+    yield
+    srv._jobs.clear()
 
 
 @pytest.mark.asyncio
