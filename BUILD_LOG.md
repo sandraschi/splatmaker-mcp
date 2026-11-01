@@ -27,12 +27,20 @@
 - run 1: frontend OK + CSS gate PASS; PyInstaller failed on `copy_metadata("fastapi")` (not installed). Fixed spec.
 - run 2: backend.exe 52.3 MB built; smoke harness itself failed (`Start-Process -Environment` is PS7-only, script runs 5.1). Fixed to env-inherit + restore.
 - run 3: smoke test caught REAL frozen crash (`rfc3987_syntax/syntax_rfc3987.lark` missing in _MEIPASS). Fixed spec (collect_data_files + hiddenimports).
-- run 4: (current) full pipeline from committed tree → NSIS. See below.
+- run 4: detached wrapper reached PyInstaller PKG write, then the harness reaped the wrapper mid-EXE-assembly (no sentinel). Orphaned smoke-test backend from run 2 (alive 80+ min) locked dist exe — killed before rerun.
+- run 5 (manual chunks): incremental PyInstaller OK → frozen smoke on :11999 PASS (health + status + request-log all 200, `verified: missing` honest without engine) → embedded → tauri build OK 54.00 MiB.
+- run 6 (detached rebuild from clean tree): died fast on a bogus wrapper-artifact "FATAL" (manual `bun run build` passed immediately after). Abandoned detached wrappers for long builds in this environment (harness reaps redirected/detached powershell children unpredictably; direct children like vite/frozen exe survive).
+- run 7 (foreground tauri only): 1m01s incremental, installer staged to dist/.
+- CUA run 1: 10/12 (nav discovery 0 links — WebView2 UIA race; receipt auto-failed).
+- CUA run 2: 11/12 all-nav-passed, receipt FAILED — root cause: my `/api/v1/request-log` returned `{"requests"}` without the `{"count"}` key the proof reads (`data.get("count", 0)` → always 0). Fixed server, committed, clean-rebuilt PyInstaller (incremental freeze had kept the stale shape — verified via curl showing `{"requests"` first key), re-embedded, tauri rebuilt.
+- CUA runs 3–5: 11/12 with nav discovery flaking (pass, fail, fail) on the single-shot UIA scan. Probed directly: 13 Hyperlinks exist but report invisible/unnamed mid-layout. Fixed in the FLEET TEMPLATE (v16: retry scan 3x over 15s), copied to repo, committed both.
+- CUA run 6: **12/12 ALL PHASES PASSED** (nav 11/11 + receipt proof OK). Screenshot evidence in cua-reports/ (gitignored): installed app renders dark theme, sidebar, backend ok, engine ready.
+- Uploaded `Splatmaker MCP_0.3.0_x64-setup.exe` (54 MB) to the v0.3.0 GitHub release (`--clobber`).
 
 ### CUA smoke + release
 
-- (pending) `just cua-nsis-test` against the installed app, then uninstall.
-- (pending) attach `*-setup.exe` to the v0.3.0 GitHub release.
+- [x] `just cua-nsis-test` against the installed app (12/12), then uninstall (phase 12, exit 0).
+- [x] `Splatmaker MCP_0.3.0_x64-setup.exe` attached to the v0.3.0 GitHub release.
 
 ### Known product limitation (documented, not a defect)
 
